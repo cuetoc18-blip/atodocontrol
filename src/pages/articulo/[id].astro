@@ -1,6 +1,6 @@
 ---
 import Layout from '../../layouts/Layout.astro';
-import { supabase, esImagenReal, igPermalink, fechaEs, type Noticia } from '../lib/supabase';
+import { supabase, esImagenReal, igPermalink, fechaEs, type Noticia } from '../../lib/supabase';
 
 const { id } = Astro.params;
 const { data } = await supabase.from('noticias').select('*').eq('id', id).maybeSingle();
