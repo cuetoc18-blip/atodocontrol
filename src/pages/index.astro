@@ -1,0 +1,59 @@
+---
+import Layout from '../layouts/Layout.astro';
+---
+<Layout title="A Todo Control | Veeduría ciudadana y control político">
+  <main>
+    <div>
+      <div id="featuredContainer"></div>
+      <div class="news-grid" id="newsGrid"></div>
+    </div>
+    <aside class="sidebar">
+      <div class="political-banner">
+        <strong>A Todo Control</strong>
+        Medio de veeduría ciudadana y control político. Vigilamos el poder, exigimos resultados y damos voz a la comunidad.
+      </div>
+      <div class="widget">
+        <h3>Secciones</h3>
+        <a href="/">Todas</a>
+        <a href="/?cat=Control%20Político">Control Político</a>
+        <a href="/?cat=Política%20Local">Política Local</a>
+        <a href="/?cat=Alcaldía">Alcaldía</a>
+        <a href="/?cat=Seguridad">Seguridad</a>
+        <a href="/?cat=Comunidad">Comunidad</a>
+        <a href="/?cat=Opinión">Opinión</a>
+      </div>
+    </aside>
+  </main>
+  <script>
+    import { supabase, igPermalink } from '../lib/supabase.js';
+    const client = supabase();
+    const grid = document.getElementById('newsGrid');
+    const featuredContainer = document.getElementById('featuredContainer');
+    const cat = new URLSearchParams(location.search).get('cat') || '';
+
+    function media(n) {
+      const img = n.imagen_url && !/instagram\.com/i.test(n.imagen_url) ? n.imagen_url : '';
+      if (img) return `<img src="${img}" alt="">`;
+      if (igPermalink(n.instagram_url || n.imagen_url)) return `<div class="vid-thumb"><span>▶</span></div>`;
+      return `<div class="vid-thumb"><span>▶</span></div>`;
+    }
+
+    let q = client.from('noticias')
+      .select('id,titulo,resumen,categoria,imagen_url,instagram_url,autor,publicada,es_portada,fecha_publicacion,created_at')
+      .eq('publicada', true)
+      .order('fecha_publicacion', { ascending: false })
+      .limit(12);
+    if (cat) q = q.eq('categoria', cat);
+    const { data } = await q;
+    if (!data?.length) {
+      grid.innerHTML = '<p style="grid-column:1/-1;color:#64748b;padding:20px;">Aún no hay noticias publicadas.</p>';
+    } else {
+      const portada = data.find(n => n.es_portada);
+      const resto = data.filter(n => !n.es_portada);
+      if (portada && featuredContainer) {
+        featuredContainer.innerHTML = `<a href="/noticia/${portada.id}" class="featured">${media(portada)}<div class="featured-content"><span class="category">${portada.categoria || 'General'}</span><h1>${portada.titulo}</h1><p>${portada.resumen || ''}</p></div></a>`;
+      }
+      grid.innerHTML = resto.map(n => `<a href="/noticia/${n.id}" class="card">${media(n)}<div class="card-content"><span class="category">${n.categoria || 'General'}</span><h3>${n.titulo}</h3><p>${n.resumen || ''}</p></div></a>`).join('');
+    }
+  </script>
+</Layout>

@@ -1,0 +1,59 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import { supabase, igPermalink } from '../../lib/supabase.js';
+
+const { id } = Astro.params;
+const client = supabase();
+const { data } = await client.from('noticias').select('*').eq('id', id).maybeSingle();
+
+if (!data) {
+  return Astro.redirect('/');
+}
+
+const title = `${data.titulo} | A Todo Control`;
+const description = (data.resumen || data.titulo || '').slice(0, 180);
+const image = data.imagen_url && !/instagram\.com/i.test(data.imagen_url)
+  ? data.imagen_url
+  : 'https://atodocontrol.co/og-default.jpg';
+const url = `https://atodocontrol.co/noticia/${id}`;
+const ig = igPermalink(data.instagram_url || data.contenido || '');
+const fecha = new Date(data.fecha_publicacion || data.created_at);
+const fechaTxt = fecha.toLocaleDateString('es-CO', { day: 'numeric', month: 'long', year: 'numeric' });
+const pars = String(data.contenido || '').split('\n').filter(p => p.trim());
+const share = encodeURIComponent(url);
+const shareT = encodeURIComponent(data.titulo || '');
+---
+<Layout title={title} description={description} image={image} url={url}>
+  <div class="article-wrap">
+    <article class="article-card">
+      {data.imagen_url && !/instagram\.com/i.test(data.imagen_url) && (
+        <img class="article-image" src={data.imagen_url} alt={data.titulo} />
+      )}
+      <div class="article-body">
+        <span class="category">{data.categoria || 'General'}</span>
+        <h1>{data.titulo}</h1>
+        {data.resumen && <p class="dek">{data.resumen}</p>}
+        {ig && (
+          <div class="ig-embed">
+            <iframe src={`${ig}embed`} allowfullscreen loading="lazy" title="Instagram"></iframe>
+            <p style="text-align:center"><a href={ig} target="_blank" rel="noopener">Ver en Instagram</a></p>
+          </div>
+        )}
+        <div class="byline">
+          <div>
+            <strong>A Todo Control</strong>
+            <div class="byline-date">{fechaTxt}</div>
+          </div>
+          <div class="share">
+            <a href={`https://www.facebook.com/sharer/sharer.php?u=${share}`} target="_blank" rel="noopener" title="Facebook"><img src="/share-facebook.png" alt="Facebook" /></a>
+            <a href={`https://twitter.com/intent/tweet?url=${share}&text=${shareT}`} target="_blank" rel="noopener" title="X"><img src="/share-x.webp" alt="X" /></a>
+            <a href={`https://api.whatsapp.com/send?text=${shareT}%20${share}`} target="_blank" rel="noopener" title="WhatsApp"><img src="/share-whatsapp.webp" alt="WhatsApp" /></a>
+          </div>
+        </div>
+        <div class="content">
+          {pars.map(p => <p>{p}</p>)}
+        </div>
+      </div>
+    </article>
+  </div>
+</Layout>
