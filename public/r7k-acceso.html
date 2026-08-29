@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Acceso</title>
+  <meta name="robots" content="noindex,nofollow">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      background: #0d1b2a;
+      color: #1a1a1a;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .login-box {
+      width: 100%;
+      max-width: 400px;
+      background: white;
+      padding: 36px;
+      border-radius: 12px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.25);
+      margin: 20px;
+    }
+    .logo {
+      text-align: center;
+      font-size: 1.5rem;
+      font-weight: 800;
+      margin-bottom: 8px;
+      color: #0d1b2a;
+    }
+    .logo span { color: #c1121f; }
+    .logo img {
+      height: 86px;
+      width: auto;
+      max-width: 280px;
+      display: block;
+      margin: 0 auto 8px;
+      object-fit: contain;
+    }
+    .subtitle {
+      text-align: center;
+      color: #64748b;
+      font-size: 0.95rem;
+      margin-bottom: 28px;
+    }
+    .form-group {
+      margin-bottom: 16px;
+    }
+    .form-group label {
+      display: block;
+      font-size: 0.88rem;
+      font-weight: 600;
+      margin-bottom: 6px;
+      color: #334155;
+    }
+    .form-group input {
+      width: 100%;
+      padding: 12px 14px;
+      border: 1px solid #cbd5e1;
+      border-radius: 7px;
+      font-size: 0.95rem;
+      font-family: inherit;
+    }
+    .form-group input:focus {
+      outline: none;
+      border-color: #c1121f;
+    }
+    .btn {
+      width: 100%;
+      padding: 12px;
+      background: #c1121f;
+      color: white;
+      border: none;
+      border-radius: 7px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      margin-top: 8px;
+    }
+    .btn:hover { background: #a50f1a; }
+    .error-msg {
+      background: #fef2f2;
+      color: #b91c1c;
+      padding: 10px 14px;
+      border-radius: 6px;
+      font-size: 0.9rem;
+      margin-bottom: 16px;
+      display: none;
+    }
+    .back-link {
+      display: block;
+      text-align: center;
+      margin-top: 20px;
+      color: #64748b;
+      text-decoration: none;
+      font-size: 0.9rem;
+    }
+    .back-link:hover { color: #c1121f; }
+  </style>
+</head>
+<body>
+
+  <div class="login-box">
+    <div class="logo"><img src="logo.png?v=10" alt="A Todo Control" style="height:90px;width:auto;max-width:320px;background:none;border:none;border-radius:0;padding:0;object-fit:contain;"></div>
+    <p class="subtitle">Panel de Administración</p>
+
+    <div class="error-msg" id="loginError"></div>
+
+    <form id="loginForm">
+      <div class="form-group">
+        <label>Correo electrónico</label>
+        <input type="email" id="loginEmail" required placeholder="admin@atodocontrol.com">
+      </div>
+      <div class="form-group">
+        <label>Contraseña</label>
+        <input type="password" id="loginPassword" required placeholder="••••••••">
+      </div>
+      <button type="submit" class="btn">Ingresar</button>
+    </form>
+
+    <a href="index.html" class="back-link">← Volver al sitio</a>
+  </div>
+
+  <script>
+    (function () {
+      var h = (location.hostname || '').toLowerCase();
+      if (h !== 'atodocontrol.co' && h !== 'www.atodocontrol.co') {
+        document.documentElement.innerHTML = '';
+        location.replace('/');
+      }
+    })();
+</script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script>
+    const SUPABASE_URL = 'https://hlqdkosclnmmdhasoupt.supabase.co';
+    const SUPABASE_ANON_KEY = 'sb_publishable_hw4WsIr-GvZU7PEu_KNNEw_tC-98Nst';
+
+    const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    // Si ya está logueado, ir directo al panel
+    (async () => {
+      const { data: { session } } = await supabaseClient.auth.getSession();
+      if (session) {
+        window.location.href = '/r7k-panel';
+      }
+    })();
+
+    document.getElementById('loginForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const errorBox = document.getElementById('loginError');
+      errorBox.style.display = 'none';
+
+      const email = document.getElementById('loginEmail').value;
+      const password = document.getElementById('loginPassword').value;
+
+      const { data, error } = await supabaseClient.auth.signInWithPassword({
+        email,
+        password
+      });
+
+      if (error) {
+        errorBox.textContent = 'Error: ' + error.message;
+        errorBox.style.display = 'block';
+        return;
+      }
+
+      // Login exitoso → ir al panel
+      window.location.href = '/r7k-panel';
+    });
+  </script>
+</body>
+</html>

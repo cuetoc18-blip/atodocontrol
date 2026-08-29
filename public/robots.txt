@@ -1,0 +1,8 @@
+User-agent: *
+Allow: /
+Disallow: /r7k-acceso
+Disallow: /r7k-panel
+Disallow: /r7k-acceso.html
+Disallow: /r7k-panel.html
+Disallow: /login.html
+Disallow: /admin.html

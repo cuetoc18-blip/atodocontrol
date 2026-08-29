@@ -1,0 +1,17 @@
+[build]
+  command = "npm run build"
+  publish = "dist"
+
+[build.environment]
+  NODE_VERSION = "22"
+
+[[redirects]]
+  from = "/articulo.html"
+  to = "/noticia/:id"
+  status = 302
+  query = {id = ":id"}
+
+[[redirects]]
+  from = "/index.html"
+  to = "/"
+  status = 301

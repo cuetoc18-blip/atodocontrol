@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Redacción</title>
+  <meta name="robots" content="noindex,nofollow">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Segoe UI', system-ui, sans-serif; background: #f1f3f5; color: #1a1a1a; }
+    header { background: #0d1b2a; color: white; padding: 0 20px; border-bottom: 4px solid #c1121f; }
+    .header-container { max-width: 1100px; margin: 0 auto; display: flex; justify-content: space-between; align-items: center; height: 72px; }
+    .logo { font-size: 1.25rem; font-weight: 800; text-decoration: none; color: white; }
+    .logo span { color: #c1121f; }
+    .logo img {
+      height: 58px;
+      width: auto;
+      max-width: 360px;
+      display: block;
+      object-fit: contain;
+      background: none;
+      border-radius: 0;
+      padding: 0;
+    }
+        .wordmark {
+      display: flex;
+      align-items: baseline;
+      gap: 8px;
+      text-decoration: none;
+      color: #fff;
+      font-weight: 800;
+      font-size: 1.12rem;
+      letter-spacing: 0.4px;
+      white-space: nowrap;
+    }
+    .wordmark span { color: #c1121f; }
+    .wordmark em {
+      font-style: normal;
+      font-size: 0.55rem;
+      font-weight: 800;
+      background: #c1121f;
+      color: #fff;
+      padding: 3px 6px;
+      border-radius: 3px;
+    }
+    .btn { padding: 9px 14px; border-radius: 6px; font-size: 0.9rem; font-weight: 600; cursor: pointer; border: none; }
+    .btn-primary { background: #c1121f; color: white; }
+    .btn-secondary { background: #1b263b; color: #cbd5e1; }
+    .btn-danger { background: #7f1d1d; color: white; }
+    .btn-sm { padding: 6px 10px; font-size: 0.8rem; }
+    .container { max-width: 1100px; margin: 24px auto; padding: 0 16px; }
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    @media (max-width: 800px) { .grid { grid-template-columns: 1fr; } }
+    .card { background: white; border-radius: 10px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+    .card h2 { font-size: 1.1rem; margin-bottom: 14px; padding-bottom: 8px; border-bottom: 2px solid #e2e8f0; }
+    .form-group { margin-bottom: 12px; }
+    .form-group label { display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 4px; }
+    .form-group input, .form-group select, .form-group textarea {
+      width: 100%; padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.95rem; font-family: inherit;
+    }
+    .form-group textarea { min-height: 120px; resize: vertical; }
+    .checkbox-row { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
+    .checkbox-row input { width: auto; }
+    .error-box {
+      background: #fef2f2; color: #b91c1c; padding: 12px; border-radius: 6px; margin-bottom: 14px;
+      font-size: 0.9rem; display: none; white-space: pre-wrap; word-break: break-word;
+    }
+    .ok-box {
+      background: #f0fdf4; color: #166534; padding: 12px; border-radius: 6px; margin-bottom: 14px;
+      font-size: 0.9rem; display: none;
+    }
+    .article-item {
+      display: flex; justify-content: space-between; gap: 10px; padding: 10px;
+      background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; margin-bottom: 8px;
+    }
+    .article-item h4 { font-size: 0.92rem; margin-bottom: 3px; }
+    .meta { font-size: 0.78rem; color: #64748b; }
+    .status { display: inline-block; font-size: 0.72rem; padding: 2px 7px; border-radius: 99px; font-weight: 600; }
+    .status-ok { background: #dcfce7; color: #166534; }
+    .status-no { background: #fef3c7; color: #92400e; }
+    #debug { background: #0f172a; color: #86efac; padding: 12px; border-radius: 8px; font-family: monospace; font-size: 0.8rem; margin-bottom: 16px; white-space: pre-wrap; max-height: 200px; overflow: auto; }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="header-container">
+      <a href="index.html" class="logo"><img src="logo.png?v=12" alt="A Todo Control"></a>
+      <div>
+        <span id="userEmail" style="font-size:0.85rem;color:#94a3b8;margin-right:10px;"></span>
+        <button class="btn btn-secondary btn-sm" id="btnLogout">Cerrar sesión</button>
+      </div>
+    </div>
+  </header>
+
+  <div class="container">
+    <div id="debug" style="display:none">Iniciando panel...</div>
+    <div class="error-box" id="errorBox"></div>
+    <div class="ok-box" id="okBox"></div>
+
+    <div class="grid">
+      <div class="card">
+        <h2 id="formTitle">Publicar noticia</h2>
+        <form id="articleForm">
+          <input type="hidden" id="articleId">
+          <div class="form-group">
+            <label>Título *</label>
+            <input type="text" id="titulo" required>
+          </div>
+          <div class="form-group">
+            <label>Resumen</label>
+            <input type="text" id="resumen">
+          </div>
+          <div class="form-group">
+            <label>Contenido *</label>
+            <textarea id="contenido" required></textarea>
+          </div>
+          <div class="form-group">
+            <label>Categoría</label>
+            <select id="categoria">
+              <option value="Control Político">Control Político</option>
+              <option value="Política Local">Política Local</option>
+              <option value="Alcaldía">Alcaldía</option>
+              <option value="Seguridad">Seguridad</option>
+              <option value="Comunidad">Comunidad</option>
+              <option value="Opinión">Opinión</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Subir imagen (opcional)</label>
+            <input type="file" id="imagen_file" accept="image/jpeg,image/png,image/webp,image/jpg">
+            <small style="color:#64748b;font-size:0.8rem;">JPG, PNG o WebP. Si falla Storage, se publica sin imagen.</small>
+          </div>
+          <div class="form-group">
+            <label>O URL de imagen</label>
+            <input type="url" id="imagen_url" placeholder="https://...">
+          </div>
+          <div class="form-group">
+            <label>Video de Instagram (opcional)</label>
+            <input type="url" id="instagram_url" placeholder="https://www.instagram.com/reel/...">
+            <small style="color:#64748b;font-size:0.8rem;">Pega el enlace del reel o publicación. Se verá en la noticia.</small>
+          </div>
+          <div class="form-group">
+            <label>Autor</label>
+            <input type="text" id="autor" value="Redacción A Todo Control">
+          </div>
+          <div class="form-group">
+            <label>Fecha de publicación</label>
+            <input type="datetime-local" id="fecha_publicacion">
+            <small style="color:#64748b;font-size:0.8rem;">Si la dejas vacía, se usa la fecha actual.</small>
+          </div>
+          <div class="checkbox-row">
+            <input type="checkbox" id="publicada" checked>
+            <label for="publicada" style="margin:0;">Publicar ahora</label>
+          </div>
+          <div class="checkbox-row">
+            <input type="checkbox" id="es_portada">
+            <label for="es_portada" style="margin:0;">Marcar como Portada</label>
+          </div>
+          <button type="submit" class="btn btn-primary" id="btnSubmit">Publicar noticia</button>
+          <button type="button" class="btn btn-secondary" id="btnCancel" style="display:none;margin-left:8px;">Cancelar</button>
+        </form>
+      </div>
+
+      <div class="card">
+        <h2>Noticias existentes</h2>
+        <div id="articleList">Cargando...</div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      var h = (location.hostname || '').toLowerCase();
+      if (h !== 'atodocontrol.co' && h !== 'www.atodocontrol.co') {
+        document.documentElement.innerHTML = '';
+        location.replace('https://atodocontrol.co/');
+      }
+    })();
+</script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script>
+    const SUPABASE_URL = 'https://hlqdkosclnmmdhasoupt.supabase.co';
+    const SUPABASE_ANON_KEY = 'sb_publishable_hw4WsIr-GvZU7PEu_KNNEw_tC-98Nst';
+    const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    const debug = document.getElementById('debug');
+    const errorBox = document.getElementById('errorBox');
+    const okBox = document.getElementById('okBox');
+    const list = document.getElementById('articleList');
+
+    function log(msg) {
+      debug.textContent += '\n' + msg;
+      console.log(msg);
+    }
+
+    function showError(msg) {
+      errorBox.style.display = 'block';
+      errorBox.textContent = msg;
+      okBox.style.display = 'none';
+    }
+
+    function showOk(msg) {
+      okBox.style.display = 'block';
+      okBox.textContent = msg;
+      errorBox.style.display = 'none';
+    }
+
+
+    const BUCKET_NAME = 'noticias-imagenes';
+
+    async function subirImagen(file) {
+      const ext = file.name.split('.').pop().toLowerCase();
+      const fileName = Date.now() + '-' + Math.random().toString(36).slice(2, 8) + '.' + ext;
+      const filePath = 'articulos/' + fileName;
+
+      log('Subiendo imagen a Storage: ' + filePath);
+
+      const { data, error } = await supabaseClient.storage
+        .from(BUCKET_NAME)
+        .upload(filePath, file, { cacheControl: '3600', upsert: false });
+
+      if (error) {
+        throw new Error(error.message);
+      }
+
+      const { data: pub } = supabaseClient.storage.from(BUCKET_NAME).getPublicUrl(filePath);
+      log('Imagen subida: ' + pub.publicUrl);
+      return pub.publicUrl;
+    }
+
+    async function init() {
+      log('Conectando a Supabase...');
+      log('URL: ' + SUPABASE_URL);
+
+      const { data: { session }, error: sessErr } = await supabaseClient.auth.getSession();
+      if (sessErr) {
+        log('Error sesión: ' + sessErr.message);
+        showError('Error de sesión: ' + sessErr.message);
+        return;
+      }
+
+      if (!session) {
+        log('No hay sesión → redirigiendo a login');
+        window.location.href = '/r7k-acceso';
+        return;
+      }
+
+      log('Sesión OK: ' + session.user.email);
+      document.getElementById('userEmail').textContent = session.user.email;
+      await cargarLista();
+      supabaseClient.channel('vistas-admin')
+        .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'noticias' }, () => cargarLista())
+        .subscribe();
+    }
+
+    async function cargarLista() {
+      list.innerHTML = 'Cargando...';
+      log('Consultando tabla noticias...');
+
+      const { data, error } = await supabaseClient
+        .from('noticias')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        log('ERROR al listar: ' + error.message);
+        list.innerHTML = '<span style="color:#b91c1c">Error: ' + error.message + '</span>';
+        showError('No se pudieron cargar las noticias:\n' + error.message + '\n\nEjecuta las políticas RLS para authenticated.');
+        return;
+      }
+
+      log('Noticias encontradas: ' + (data ? data.length : 0));
+
+      if (!data || data.length === 0) {
+        list.innerHTML = '<span style="color:#64748b">No hay noticias todavía.</span>';
+        return;
+      }
+
+      list.innerHTML = data.map(n => `
+        <div class="article-item">
+          <div>
+            <h4>${n.titulo || '(Sin título)'}</h4>
+            <div class="meta">
+              ${n.categoria || ''} · ${n.created_at ? new Date(n.created_at).toLocaleDateString('es-CO') : ''}
+              <span class="status ${n.publicada ? 'status-ok' : 'status-no'}">${n.publicada ? 'Publicada' : 'Borrador'}</span>
+              ${n.es_portada ? ' · PORTADA' : ''}
+              · <strong style="color:#0d1b2a">${n.vistas || 0} vistas</strong>
+            </div>
+          </div>
+          <div>
+            <button class="btn btn-secondary btn-sm" onclick="editar('${n.id}')">Editar</button>
+            <button class="btn btn-danger btn-sm" onclick="eliminar('${n.id}')">Borrar</button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    document.getElementById('articleForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      errorBox.style.display = 'none';
+      const btn = document.getElementById('btnSubmit');
+      btn.disabled = true;
+      btn.textContent = 'Guardando...';
+
+      const id = document.getElementById('articleId').value;
+      let imagenUrl = document.getElementById('imagen_url').value.trim() || null;
+
+      const fileInput = document.getElementById('imagen_file');
+      if (fileInput && fileInput.files[0]) {
+        try {
+          imagenUrl = await subirImagen(fileInput.files[0]);
+        } catch (imgErr) {
+          log('Error Storage (se publica sin imagen): ' + imgErr.message);
+          alert('No se pudo subir la imagen. La noticia se publicará sin foto.\nError: ' + imgErr.message);
+        }
+      }
+
+      const payload = {
+        titulo: document.getElementById('titulo').value.trim(),
+        resumen: document.getElementById('resumen').value.trim() || null,
+        contenido: document.getElementById('contenido').value.trim(),
+        categoria: document.getElementById('categoria').value,
+        imagen_url: imagenUrl,
+        instagram_url: document.getElementById('instagram_url').value.trim() || null,
+        autor: document.getElementById('autor').value.trim() || 'Redacción A Todo Control',
+        publicada: document.getElementById('publicada').checked,
+        es_portada: document.getElementById('es_portada').checked,
+        fecha_publicacion: document.getElementById('fecha_publicacion').value
+          ? new Date(document.getElementById('fecha_publicacion').value).toISOString()
+          : new Date().toISOString()
+      };
+
+      log('Publicando: ' + payload.titulo);
+
+      try {
+        let result;
+        if (id) {
+          result = await supabaseClient.from('noticias').update(payload).eq('id', id).select();
+        } else {
+          result = await supabaseClient.from('noticias').insert([payload]).select();
+        }
+
+        if (result.error) {
+          log('ERROR al guardar: ' + result.error.message);
+          showError('Error al guardar:\n' + result.error.message + (result.error.details ? '\n' + result.error.details : ''));
+        } else {
+          log('Guardado OK');
+          showOk(id ? 'Noticia actualizada' : 'Noticia publicada correctamente');
+          resetForm();
+          await cargarLista();
+        }
+      } catch (err) {
+        log('Excepción: ' + err.message);
+        showError('Excepción: ' + err.message);
+      }
+
+      btn.disabled = false;
+      btn.textContent = id ? 'Guardar cambios' : 'Publicar noticia';
+    });
+
+    window.editar = async function(id) {
+      const { data, error } = await supabaseClient.from('noticias').select('*').eq('id', id).single();
+      if (error || !data) {
+        showError('No se pudo cargar: ' + (error ? error.message : 'sin datos'));
+        return;
+      }
+      document.getElementById('articleId').value = data.id;
+      document.getElementById('titulo').value = data.titulo || '';
+      document.getElementById('resumen').value = data.resumen || '';
+      document.getElementById('contenido').value = data.contenido || '';
+      document.getElementById('categoria').value = data.categoria || 'Control Político';
+      document.getElementById('imagen_url').value = data.imagen_url || '';
+      document.getElementById('instagram_url').value = data.instagram_url || '';
+      document.getElementById('autor').value = data.autor || 'Redacción A Todo Control';
+      const rawFecha = data.fecha_publicacion || data.created_at;
+      if (rawFecha) {
+        const d = new Date(rawFecha);
+        const local = new Date(d.getTime() - d.getTimezoneOffset()*60000).toISOString().slice(0,16);
+        document.getElementById('fecha_publicacion').value = local;
+      }
+      document.getElementById('publicada').checked = data.publicada !== false;
+      document.getElementById('es_portada').checked = !!data.es_portada;
+      document.getElementById('formTitle').textContent = 'Editar noticia';
+      document.getElementById('btnSubmit').textContent = 'Guardar cambios';
+      document.getElementById('btnCancel').style.display = 'inline-block';
+    };
+
+    window.eliminar = async function(id) {
+      if (!confirm('¿Eliminar esta noticia?')) return;
+      const { error } = await supabaseClient.from('noticias').delete().eq('id', id);
+      if (error) showError('Error al eliminar: ' + error.message);
+      else {
+        showOk('Noticia eliminada');
+        await cargarLista();
+      }
+    };
+
+    function resetForm() {
+      document.getElementById('articleForm').reset();
+      document.getElementById('articleId').value = '';
+      document.getElementById('publicada').checked = true;
+      document.getElementById('es_portada').checked = false;
+      document.getElementById('autor').value = 'Redacción A Todo Control';
+      document.getElementById('formTitle').textContent = 'Publicar noticia';
+      document.getElementById('btnSubmit').textContent = 'Publicar noticia';
+      document.getElementById('btnCancel').style.display = 'none';
+    }
+
+    document.getElementById('btnCancel').addEventListener('click', resetForm);
+    document.getElementById('btnLogout').addEventListener('click', async () => {
+      await supabaseClient.auth.signOut();
+      window.location.href = '/r7k-acceso';
+    });
+
+    init();
+  </script>
+</body>
+</html>
