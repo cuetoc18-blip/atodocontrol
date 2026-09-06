@@ -57,3 +57,20 @@ const shareT = encodeURIComponent(data.titulo || '');
     </article>
   </div>
 </Layout>
+<script define:vars={{ id }}>
+  try {
+    const key = 'vista_' + id;
+    if (!sessionStorage.getItem(key)) {
+      sessionStorage.setItem(key, '1');
+      fetch('https://hlqdkosclnmmdhasoupt.supabase.co/rest/v1/rpc/increment_vistas', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          apikey: 'sb_publishable_hw4WsIr-GvZU7PEu_KNNEw_tC-98Nst',
+          Authorization: 'Bearer sb_publishable_hw4WsIr-GvZU7PEu_KNNEw_tC-98Nst'
+        },
+        body: JSON.stringify({ nid: id })
+      }).catch(function () {});
+    }
+  } catch (e) {}
+</script>
