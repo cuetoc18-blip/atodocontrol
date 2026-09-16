@@ -59,7 +59,7 @@ const shareT = encodeURIComponent(data.titulo || '');
           </div>
         </div>
         <div class="content">
-          {pars.map(p => <p>{p}</p>)}
+          {pars.map(p => <p set:html={p} />)}
         </div>
       </div>
     </article>
