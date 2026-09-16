@@ -19,7 +19,15 @@ const url = `https://atodocontrol.co/noticia/${id}`;
 const ig = igPermalink(data.instagram_url || data.contenido || '');
 const fecha = new Date(data.fecha_publicacion || data.created_at);
 const fechaTxt = fecha.toLocaleDateString('es-CO', { day: 'numeric', month: 'long', year: 'numeric' });
-const pars = String(data.contenido || '').split('\n').filter(p => p.trim());
+function formatBody(t) {
+  return String(t || '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    .replace(/\*(.+?)\*/g, '<em>$1</em>');
+}
+const pars = String(data.contenido || '').split('\n').filter(p => p.trim()).map(formatBody);
 const share = encodeURIComponent(url);
 const shareT = encodeURIComponent(data.titulo || '');
 ---
