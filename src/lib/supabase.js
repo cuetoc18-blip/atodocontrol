@@ -12,3 +12,14 @@ export function igPermalink(url = '') {
   if (!m) return '';
   return `https://www.instagram.com/${m[1].toLowerCase()}/${m[2]}/`;
 }
+
+export function xStatusId(url = '') {
+  const m = String(url).match(/(?:twitter|x)\.com\/[^/]+\/status\/(\d+)/i);
+  return m ? m[1] : '';
+}
+
+export function fbPermalink(url = '') {
+  const u = String(url).trim();
+  if (!/facebook\.com|fb\.watch/i.test(u)) return '';
+  return u.split('?')[0];
+}
