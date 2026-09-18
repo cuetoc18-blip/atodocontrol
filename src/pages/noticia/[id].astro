@@ -53,13 +53,10 @@ const shareT = encodeURIComponent(data.titulo || '');
         )}
         {xid && (
           <div class="x-embed">
-            <iframe
-              src={`https://platform.twitter.com/embed/Tweet.html?id=${xid}&dnt=true&theme=light`}
-              allowfullscreen
-              loading="lazy"
-              title="Publicación de X"
-            ></iframe>
-            <p style="text-align:center"><a href={`https://x.com/i/status/${xid}`} target="_blank" rel="noopener">Ver en X</a></p>
+            <blockquote class="twitter-tweet" data-dnt="true" data-media-max-width="550">
+              <a href={`https://x.com/i/status/${xid}`}>Ver publicación en X</a>
+            </blockquote>
+            <script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
           </div>
         )}
         {fb && (
