@@ -40,5 +40,7 @@ footer { text-align: center; padding: 28px 16px; color: #64748b; font-size: .9re
 .share { display: flex; gap: 8px; }
 .share a, .share a img { width: 32px; height: 32px; display: block; }
 .ig-embed iframe { width: 100%; max-width: 540px; height: 720px; border: 0; display: block; margin: 16px auto; border-radius: 8px; }
+.x-embed iframe { width: 100%; max-width: 550px; height: 580px; border: 0; display: block; margin: 16px auto; border-radius: 8px; }
+.fb-embed iframe { width: 100%; max-width: 500px; height: 640px; border: 0; display: block; margin: 16px auto; border-radius: 8px; overflow: hidden; }
 .vid-thumb { background: linear-gradient(160deg,#0d1b2a,#1b263b); display: flex; align-items: center; justify-content: center; color: #fff; }
 .vid-thumb span { width: 58px; height: 58px; border-radius: 50%; background: #c1121f; display: flex; align-items: center; justify-content: center; }
