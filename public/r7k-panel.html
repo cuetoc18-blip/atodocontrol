@@ -332,6 +332,8 @@
         categoria: document.getElementById('categoria').value,
         imagen_url: imagenUrl,
         instagram_url: document.getElementById('instagram_url').value.trim() || null,
+        x_url: document.getElementById('x_url').value.trim() || null,
+        facebook_url: document.getElementById('facebook_url').value.trim() || null,
         autor: document.getElementById('autor').value.trim() || 'Redacción A Todo Control',
         publicada: document.getElementById('publicada').checked,
         es_portada: document.getElementById('es_portada').checked,
@@ -381,6 +383,8 @@
       document.getElementById('categoria').value = data.categoria || 'Control Político';
       document.getElementById('imagen_url').value = data.imagen_url || '';
       document.getElementById('instagram_url').value = data.instagram_url || '';
+      document.getElementById('x_url').value = data.x_url || '';
+      document.getElementById('facebook_url').value = data.facebook_url || '';
       document.getElementById('autor').value = data.autor || 'Redacción A Todo Control';
       const rawFecha = data.fecha_publicacion || data.created_at;
       if (rawFecha) {
