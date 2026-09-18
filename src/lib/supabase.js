@@ -14,7 +14,9 @@ export function igPermalink(url = '') {
 }
 
 export function xStatusId(url = '') {
-  const m = String(url).match(/(?:twitter|x)\.com\/[^/]+\/status\/(\d+)/i);
+  const m = String(url).match(/(?:twitter|x)\.com\/(?:[^/\s]+\/)?(?:status|i\/web\/status|i\/status)\/(\d+)/i)
+    || String(url).match(/(?:twitter|x)\.com\/[^/\s]+\/status\/(\d+)/i)
+    || String(url).match(/\/status\/(\d+)/i);
   return m ? m[1] : '';
 }
 
