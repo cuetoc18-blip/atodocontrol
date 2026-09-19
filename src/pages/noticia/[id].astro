@@ -89,15 +89,22 @@ const shareT = encodeURIComponent(data.titulo || '');
       </div>
     </article>
   </div>
-  <script define:vars={{ id }}>
-    try {
-      const key = 'vista_' + id;
-      if (!sessionStorage.getItem(key)) {
+  <script define:vars={{ id }} is:inline>
+    (function () {
+      try {
+        var key = 'vista_' + id;
+        if (sessionStorage.getItem(key)) return;
         sessionStorage.setItem(key, '1');
-        const { createClient } = await import('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm');
-        const c = createClient('https://hlqdkosclnmmdhasoupt.supabase.co', 'sb_publishable_hw4WsIr-GvZU7PEu_KNNEw_tC-98Nst');
-        await c.rpc('increment_vistas', { nid: id });
-      }
-    } catch (e) {}
+        fetch('https://hlqdkosclnmmdhasoupt.supabase.co/rest/v1/rpc/increment_vistas', {
+          method: 'POST',
+          headers: {
+            apikey: 'sb_publishable_hw4WsIr-GvZU7PEu_KNNEw_tC-98Nst',
+            Authorization: 'Bearer sb_publishable_hw4WsIr-GvZU7PEu_KNNEw_tC-98Nst',
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ nid: id })
+        });
+      } catch (e) {}
+    })();
   </script>
 </Layout>
