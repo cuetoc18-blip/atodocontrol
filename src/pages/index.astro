@@ -29,9 +29,9 @@ function hace(d) {
   return days === 1 ? 'Hace 1 día' : `Hace ${days} días`;
 }
 function foto(n) {
-  const image = data.imagen_url && !/(instagram|facebook|twitter|x)\.com/i.test(data.imagen_url || '')
-  ? `https://atodocontrol.co/og/${id}.jpg`
-  : 'https://atodocontrol.co/og-default.jpg';
+  const u = n?.imagen_url || '';
+  if (u && !/(instagram|facebook|twitter|x)\.com/i.test(u)) return u;
+  return '';
 }
 ---
 <Layout title="A Todo Control | Veeduría ciudadana y control político" description="Medio de veeduría ciudadana y control político." url="https://atodocontrol.co/">
