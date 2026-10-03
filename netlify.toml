@@ -6,6 +6,12 @@
   NODE_VERSION = "22"
 
 [[redirects]]
+  from = "/og/:id.jpg"
+  to = "/.netlify/functions/og?id=:id"
+  status = 200
+  force = true
+  
+[[redirects]]
   from = "/articulo.html"
   to = "/noticia/:id"
   status = 302
