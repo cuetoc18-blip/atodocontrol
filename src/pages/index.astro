@@ -4,6 +4,7 @@ import { supabase } from '../lib/supabase.js';
 
 export const prerender = false;
 
+const secciones = ['Inicio', 'Seguridad', 'Comunidad', 'Política', 'Internacional'];
 const cat = Astro.url.searchParams.get('cat') || '';
 const client = supabase();
 let q = client
