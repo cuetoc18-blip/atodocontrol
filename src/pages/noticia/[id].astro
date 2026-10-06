@@ -17,9 +17,11 @@ const image = data.imagen_url && !/(instagram|facebook|twitter|x)\.com/i.test(da
   : 'https://atodocontrol.co/og-default.jpg';
 const url = `https://atodocontrol.co/noticia/${id}`;
 const blob = [data.instagram_url, data.x_url, data.facebook_url, data.video_url, data.contenido].filter(Boolean).join('\n');
-const ig = igPermalink(data.instagram_url || blob);
-const xid = xStatusId(data.x_url || blob);
-const fb = fbPermalink(data.facebook_url || blob);
+const ig = igPermalink(blob);
+const xid = xStatusId(blob);
+const fb = fbPermalink(blob);
+const fbEsVideo = /\/(reel|videos|watch|share\/[vr])\//i.test(fb);
+const fbPlugin = fbEsVideo ? 'video' : 'post';
 const fecha = new Date(data.fecha_publicacion || data.created_at);
 const fechaTxt = fecha.toLocaleDateString('es-CO', { day: 'numeric', month: 'long', year: 'numeric' });
 const horaTxt = fecha.toLocaleTimeString('es-CO', { hour: 'numeric', minute: '2-digit', hour12: true });
