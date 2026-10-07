@@ -1,20 +1,13 @@
 ---
 import Layout from '../layouts/Layout.astro';
-import { supabase } from '../lib/supabase.js';
 
 export const prerender = false;
 
+const API = import.meta.env.PUBLIC_API_URL || 'https://api.atodocontrol.co';
 const cat = Astro.url.searchParams.get('cat') || '';
-const client = supabase();
-let q = client
-  .from('noticias')
-  .select('id,titulo,resumen,categoria,imagen_url,instagram_url,publicada,es_portada,fecha_publicacion,created_at')
-  .eq('publicada', true)
-  .order('fecha_publicacion', { ascending: false })
-  .limit(16);
-if (cat) q = q.eq('categoria', cat);
-const { data: rows } = await q;
-const list = rows || [];
+const listaUrl = API + '/api/noticias' + (cat ? '?cat=' + encodeURIComponent(cat) : '');
+const res = await fetch(listaUrl);
+const list = res.ok ? await res.json() : [];
 const featured = list.find(n => n.es_portada) || list[0];
 const rest = list.filter(n => n.id !== featured?.id);
 
