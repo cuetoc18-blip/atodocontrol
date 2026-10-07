@@ -30,8 +30,9 @@ function hace(d) {
 }
 function foto(n) {
   const u = n?.imagen_url || '';
-  if (u && !/(instagram|facebook|twitter|x)\.com/i.test(u)) return u;
-  return '';
+  if (!u || /(instagram|facebook|twitter|x)\.com/i.test(u)) return '';
+  const m = u.match(/\/noticias-imagenes\/(.+)$/);
+  return m ? '/foto/' + m[1] : u;
 }
 ---
 <Layout title="A Todo Control | Veeduría ciudadana y control político" description="Medio de veeduría ciudadana y control político." url="https://atodocontrol.co/">
