@@ -25,7 +25,7 @@ const linkRe = /https?:\/\/[^\s<>"']+/gi;
 
 function fotoLocal(u) {
   const m = String(u || '').match(/\/noticias-imagenes\/(.+)$/);
-  return m ? '/api/foto?p=' + encodeURIComponent(m[1]) : u;
+  return m ? '/media/' + m[1] : u;
 }
 function formatBody(t) {
   return String(t || '')
