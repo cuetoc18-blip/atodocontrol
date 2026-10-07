@@ -119,13 +119,9 @@ const hayX = cuerpo.some(b => b.tipo === 'x') || (campo && !campoYaEsta && campo
         var key = 'vista_' + id;
         if (sessionStorage.getItem(key)) return;
         sessionStorage.setItem(key, '1');
-        fetch('https://hlqdkosclnmmdhasoupt.supabase.co/rest/v1/rpc/increment_vistas', {
+        fetch('/api/vistas', {
           method: 'POST',
-          headers: {
-            apikey: 'sb_publishable_hw4WsIr-GvZU7PEu_KNNEw_tC-98Nst',
-            Authorization: 'Bearer sb_publishable_hw4WsIr-GvZU7PEu_KNNEw_tC-98Nst',
-            'Content-Type': 'application/json'
-          },
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ nid: id })
         });
       } catch (e) {}
