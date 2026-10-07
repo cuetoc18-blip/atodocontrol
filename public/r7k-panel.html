@@ -123,7 +123,6 @@
               <option value="Seguridad">Seguridad</option>
               <option value="Comunidad">Comunidad</option>
               <option value="Opinión">Opinión</option>
-              <option value="Internacional">Internacional</option>
             </select>
           </div>
           <div class="form-group">
@@ -136,23 +135,13 @@
             <input type="url" id="imagen_url" placeholder="https://...">
           </div>
           <div class="form-group">
-            <label>Video de Instagram (opcional)</label>
-            <input type="url" id="instagram_url" placeholder="https://www.instagram.com/reel/...">
-            <small style="color:#64748b;font-size:0.8rem;">Pega el enlace del reel o publicación. Se verá en la noticia.</small>
+            <label>Video o publicación (Instagram, X o Facebook)</label>
+            <input type="url" id="instagram_url" placeholder="Pega el enlace de Instagram, X o Facebook">
+            <small style="color:#64748b;font-size:0.8rem;">Un solo campo. La noticia muestra la pantalla de la red que pegues. La foto y el texto se quedan.</small>
           </div>
           <div class="form-group">
             <label>Autor</label>
             <input type="text" id="autor" value="Redacción A Todo Control">
-          </div>
-          <div class="form-group">
-           <label>Publicación de X (opcional)</label>
-           <input type="url" id="x_url" placeholder="https://x.com/usuario/status/123456">
-           <small style="color:#64748b;font-size:0.8rem;">El enlace debe ser del post, con /status/ y el número.</small>
-          </div>
-          <div class="form-group">
-           <label>Publicación de Facebook (opcional)</label>
-           <input type="url" id="facebook_url" placeholder="https://www.facebook.com/.../posts/...">
-           <small style="color:#64748b;font-size:0.8rem;">Pega el link de la publicación, no del perfil.</small>
           </div>
           <div class="form-group">
             <label>Fecha de publicación</label>
@@ -188,12 +177,8 @@
       }
     })();
 </script>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script>
-    const SUPABASE_URL = 'https://hlqdkosclnmmdhasoupt.supabase.co';
-    const SUPABASE_ANON_KEY = 'sb_publishable_hw4WsIr-GvZU7PEu_KNNEw_tC-98Nst';
-    const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
+    const API = 'https://api.atodocontrol.co';
     const debug = document.getElementById('debug');
     const errorBox = document.getElementById('errorBox');
     const okBox = document.getElementById('okBox');
@@ -203,107 +188,67 @@
       debug.textContent += '\n' + msg;
       console.log(msg);
     }
-
     function showError(msg) {
       errorBox.style.display = 'block';
       errorBox.textContent = msg;
       okBox.style.display = 'none';
     }
-
     function showOk(msg) {
       okBox.style.display = 'block';
       okBox.textContent = msg;
       errorBox.style.display = 'none';
     }
-
-
-    const BUCKET_NAME = 'noticias-imagenes';
-
+    async function api(path, opts = {}) {
+      const res = await fetch(API + path, { credentials: 'include', ...opts });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || 'Error del servidor');
+      return data;
+    }
     async function subirImagen(file) {
-      const ext = file.name.split('.').pop().toLowerCase();
-      const fileName = Date.now() + '-' + Math.random().toString(36).slice(2, 8) + '.' + ext;
-      const filePath = 'articulos/' + fileName;
-
-      log('Subiendo imagen a Storage: ' + filePath);
-
-      const { data, error } = await supabaseClient.storage
-        .from(BUCKET_NAME)
-        .upload(filePath, file, { cacheControl: '3600', upsert: false });
-
-      if (error) {
-        throw new Error(error.message);
-      }
-
-      const { data: pub } = supabaseClient.storage.from(BUCKET_NAME).getPublicUrl(filePath);
-      log('Imagen subida: ' + pub.publicUrl);
-      return pub.publicUrl;
+      const body = new FormData();
+      body.append('archivo', file);
+      const data = await api('/api/upload', { method: 'POST', body });
+      return data.url;
     }
-
     async function init() {
-      log('Conectando a Supabase...');
-      log('URL: ' + SUPABASE_URL);
-
-      const { data: { session }, error: sessErr } = await supabaseClient.auth.getSession();
-      if (sessErr) {
-        log('Error sesión: ' + sessErr.message);
-        showError('Error de sesión: ' + sessErr.message);
-        return;
+      try {
+        const sesion = await api('/api/sesion');
+        document.getElementById('userEmail').textContent = sesion.email;
+        await cargarLista();
+        setInterval(cargarLista, 20000);
+      } catch (e) {
+        window.location.href = 'r7k-acceso.html';
       }
-
-      if (!session) {
-        log('No hay sesión → redirigiendo a login');
-        window.location.href = '/r7k-acceso';
-        return;
-      }
-
-      log('Sesión OK: ' + session.user.email);
-      document.getElementById('userEmail').textContent = session.user.email;
-      await cargarLista();
-      supabaseClient.channel('vistas-admin')
-        .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'noticias' }, () => cargarLista())
-        .subscribe();
     }
-
     async function cargarLista() {
       list.innerHTML = 'Cargando...';
-      log('Consultando tabla noticias...');
-
-      const { data, error } = await supabaseClient
-        .from('noticias')
-        .select('*')
-        .order('created_at', { ascending: false });
-
-      if (error) {
-        log('ERROR al listar: ' + error.message);
-        list.innerHTML = '<span style="color:#b91c1c">Error: ' + error.message + '</span>';
-        showError('No se pudieron cargar las noticias:\n' + error.message + '\n\nEjecuta las políticas RLS para authenticated.');
-        return;
-      }
-
-      log('Noticias encontradas: ' + (data ? data.length : 0));
-
-      if (!data || data.length === 0) {
-        list.innerHTML = '<span style="color:#64748b">No hay noticias todavía.</span>';
-        return;
-      }
-
-      list.innerHTML = data.map(n => `
-        <div class="article-item">
-          <div>
-            <h4>${n.titulo || '(Sin título)'}</h4>
-            <div class="meta">
-              ${n.categoria || ''} · ${n.created_at ? new Date(n.created_at).toLocaleDateString('es-CO') : ''}
-              <span class="status ${n.publicada ? 'status-ok' : 'status-no'}">${n.publicada ? 'Publicada' : 'Borrador'}</span>
-              ${n.es_portada ? ' · PORTADA' : ''}
-              · <strong style="color:#0d1b2a">${n.vistas || 0} vistas</strong>
+      try {
+        const data = await api('/api/admin/noticias');
+        if (!data.length) {
+          list.innerHTML = '<span style="color:#64748b">No hay noticias todavía.</span>';
+          return;
+        }
+        list.innerHTML = data.map(n => `
+          <div class="article-item">
+            <div>
+              <h4>${n.titulo || '(Sin título)'}</h4>
+              <div class="meta">
+                ${n.categoria || ''} · ${n.created_at ? new Date(n.created_at).toLocaleDateString('es-CO') : ''}
+                <span class="status ${n.publicada ? 'status-ok' : 'status-no'}">${n.publicada ? 'Publicada' : 'Borrador'}</span>
+                ${n.es_portada ? ' · PORTADA' : ''}
+                · <strong style="color:#0d1b2a">${n.vistas || 0} vistas</strong>
+              </div>
+            </div>
+            <div>
+              <button class="btn btn-secondary btn-sm" onclick="editar('${n.id}')">Editar</button>
+              <button class="btn btn-danger btn-sm" onclick="eliminar('${n.id}')">Borrar</button>
             </div>
           </div>
-          <div>
-            <button class="btn btn-secondary btn-sm" onclick="editar('${n.id}')">Editar</button>
-            <button class="btn btn-danger btn-sm" onclick="eliminar('${n.id}')">Borrar</button>
-          </div>
-        </div>
-      `).join('');
+        `).join('');
+      } catch (e) {
+        list.innerHTML = '<span style="color:#b91c1c">Error: ' + e.message + '</span>';
+        showError(e.message);
+      }
     }
 
     document.getElementById('articleForm').addEventListener('submit', async (e) => {
@@ -333,8 +278,6 @@
         categoria: document.getElementById('categoria').value,
         imagen_url: imagenUrl,
         instagram_url: document.getElementById('instagram_url').value.trim() || null,
-        x_url: document.getElementById('x_url').value.trim() || null,
-        facebook_url: document.getElementById('facebook_url').value.trim() || null,
         autor: document.getElementById('autor').value.trim() || 'Redacción A Todo Control',
         publicada: document.getElementById('publicada').checked,
         es_portada: document.getElementById('es_portada').checked,
@@ -346,22 +289,11 @@
       log('Publicando: ' + payload.titulo);
 
       try {
-        let result;
-        if (id) {
-          result = await supabaseClient.from('noticias').update(payload).eq('id', id).select();
-        } else {
-          result = await supabaseClient.from('noticias').insert([payload]).select();
-        }
-
-        if (result.error) {
-          log('ERROR al guardar: ' + result.error.message);
-          showError('Error al guardar:\n' + result.error.message + (result.error.details ? '\n' + result.error.details : ''));
-        } else {
-          log('Guardado OK');
-          showOk(id ? 'Noticia actualizada' : 'Noticia publicada correctamente');
-          resetForm();
-          await cargarLista();
-        }
+        if (id) await api('/api/noticias/' + id, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+        else await api('/api/noticias', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+        showOk(id ? 'Noticia actualizada' : 'Noticia publicada correctamente');
+        resetForm();
+        await cargarLista();
       } catch (err) {
         log('Excepción: ' + err.message);
         showError('Excepción: ' + err.message);
@@ -372,29 +304,25 @@
     });
 
     window.editar = async function(id) {
-      const { data, error } = await supabaseClient.from('noticias').select('*').eq('id', id).single();
-      if (error || !data) {
-        showError('No se pudo cargar: ' + (error ? error.message : 'sin datos'));
-        return;
-      }
-      document.getElementById('articleId').value = data.id;
-      document.getElementById('titulo').value = data.titulo || '';
-      document.getElementById('resumen').value = data.resumen || '';
-      document.getElementById('contenido').value = data.contenido || '';
-      document.getElementById('categoria').value = data.categoria || 'Control Político';
-      document.getElementById('imagen_url').value = data.imagen_url || '';
-      document.getElementById('instagram_url').value = data.instagram_url || '';
-      document.getElementById('x_url').value = data.x_url || '';
-      document.getElementById('facebook_url').value = data.facebook_url || '';
-      document.getElementById('autor').value = data.autor || 'Redacción A Todo Control';
-      const rawFecha = data.fecha_publicacion || data.created_at;
+      const data = await api('/api/admin/noticias');
+      const nota = data.find(n => n.id === id);
+      if (!nota) { showError('No se pudo cargar'); return; }
+      document.getElementById('articleId').value = nota.id;
+      document.getElementById('titulo').value = nota.titulo || '';
+      document.getElementById('resumen').value = nota.resumen || '';
+      document.getElementById('contenido').value = nota.contenido || '';
+      document.getElementById('categoria').value = nota.categoria || 'Control Político';
+      document.getElementById('imagen_url').value = nota.imagen_url || '';
+      document.getElementById('instagram_url').value = nota.instagram_url || '';
+      document.getElementById('autor').value = nota.autor || 'Redacción A Todo Control';
+      const rawFecha = nota.fecha_publicacion || nota.created_at;
       if (rawFecha) {
         const d = new Date(rawFecha);
         const local = new Date(d.getTime() - d.getTimezoneOffset()*60000).toISOString().slice(0,16);
         document.getElementById('fecha_publicacion').value = local;
       }
-      document.getElementById('publicada').checked = data.publicada !== false;
-      document.getElementById('es_portada').checked = !!data.es_portada;
+      document.getElementById('publicada').checked = nota.publicada !== false;
+      document.getElementById('es_portada').checked = !!nota.es_portada;
       document.getElementById('formTitle').textContent = 'Editar noticia';
       document.getElementById('btnSubmit').textContent = 'Guardar cambios';
       document.getElementById('btnCancel').style.display = 'inline-block';
@@ -402,11 +330,12 @@
 
     window.eliminar = async function(id) {
       if (!confirm('¿Eliminar esta noticia?')) return;
-      const { error } = await supabaseClient.from('noticias').delete().eq('id', id);
-      if (error) showError('Error al eliminar: ' + error.message);
-      else {
+      try {
+        await api('/api/noticias/' + id, { method: 'DELETE' });
         showOk('Noticia eliminada');
         await cargarLista();
+      } catch (e) {
+        showError('Error al eliminar: ' + e.message);
       }
     };
 
@@ -423,8 +352,8 @@
 
     document.getElementById('btnCancel').addEventListener('click', resetForm);
     document.getElementById('btnLogout').addEventListener('click', async () => {
-      await supabaseClient.auth.signOut();
-      window.location.href = '/r7k-acceso';
+      await fetch(API + '/api/logout', { method: 'POST', credentials: 'include' });
+      window.location.href = 'r7k-acceso.html';
     });
 
     init();

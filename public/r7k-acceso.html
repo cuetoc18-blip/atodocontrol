@@ -130,46 +130,32 @@
       var h = (location.hostname || '').toLowerCase();
       if (h !== 'atodocontrol.co' && h !== 'www.atodocontrol.co') {
         document.documentElement.innerHTML = '';
-        location.replace('/');
+        location.replace('https://atodocontrol.co/');
       }
     })();
 </script>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script>
-    const SUPABASE_URL = 'https://hlqdkosclnmmdhasoupt.supabase.co';
-    const SUPABASE_ANON_KEY = 'sb_publishable_hw4WsIr-GvZU7PEu_KNNEw_tC-98Nst';
-
-    const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
-    // Si ya está logueado, ir directo al panel
-    (async () => {
-      const { data: { session } } = await supabaseClient.auth.getSession();
-      if (session) {
-        window.location.href = '/r7k-panel';
-      }
-    })();
+    const API = 'https://api.atodocontrol.co';
 
     document.getElementById('loginForm').addEventListener('submit', async (e) => {
       e.preventDefault();
       const errorBox = document.getElementById('loginError');
       errorBox.style.display = 'none';
-
       const email = document.getElementById('loginEmail').value;
       const password = document.getElementById('loginPassword').value;
-
-      const { data, error } = await supabaseClient.auth.signInWithPassword({
-        email,
-        password
+      const res = await fetch(API + '/api/auth', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password })
       });
-
-      if (error) {
-        errorBox.textContent = 'Error: ' + error.message;
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        errorBox.textContent = data.error || 'No se pudo entrar';
         errorBox.style.display = 'block';
         return;
       }
-
-      // Login exitoso → ir al panel
-      window.location.href = '/r7k-panel';
+      window.location.href = 'r7k-panel.html';
     });
   </script>
 </body>
