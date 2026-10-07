@@ -178,7 +178,7 @@
     })();
 </script>
   <script>
-    const API = 'https://api.atodocontrol.co';
+    const API = '';
     const debug = document.getElementById('debug');
     const errorBox = document.getElementById('errorBox');
     const okBox = document.getElementById('okBox');
@@ -212,8 +212,8 @@
     }
     async function init() {
       try {
-        const sesion = await api('/api/sesion');
-        document.getElementById('userEmail').textContent = sesion.email;
+        const sesion = await api('/api/auth/me');
+        document.getElementById('userEmail').textContent = sesion.user.email;
         await cargarLista();
         setInterval(cargarLista, 20000);
       } catch (e) {
@@ -223,7 +223,7 @@
     async function cargarLista() {
       list.innerHTML = 'Cargando...';
       try {
-        const data = await api('/api/admin/noticias');
+        const data = await api('/api/noticias?admin=1');
         if (!data.length) {
           list.innerHTML = '<span style="color:#64748b">No hay noticias todavía.</span>';
           return;
@@ -304,7 +304,7 @@
     });
 
     window.editar = async function(id) {
-      const data = await api('/api/admin/noticias');
+      const data = await api('/api/noticias?admin=1');
       const nota = data.find(n => n.id === id);
       if (!nota) { showError('No se pudo cargar'); return; }
       document.getElementById('articleId').value = nota.id;
@@ -352,7 +352,7 @@
 
     document.getElementById('btnCancel').addEventListener('click', resetForm);
     document.getElementById('btnLogout').addEventListener('click', async () => {
-      await fetch(API + '/api/logout', { method: 'POST', credentials: 'include' });
+      await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' });
       window.location.href = 'r7k-acceso.html';
     });
 
