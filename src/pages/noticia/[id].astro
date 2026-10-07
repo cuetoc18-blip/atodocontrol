@@ -23,6 +23,10 @@ const share = encodeURIComponent(url);
 const shareT = encodeURIComponent(data.titulo || '');
 const linkRe = /https?:\/\/[^\s<>"']+/gi;
 
+function fotoLocal(u) {
+  const m = String(u || '').match(/\/noticias-imagenes\/(.+)$/);
+  return m ? '/foto/' + m[1] : u;
+}
 function formatBody(t) {
   return String(t || '')
     .replace(/&/g, '&')
@@ -71,7 +75,7 @@ const hayX = cuerpo.some(b => b.tipo === 'x') || (campo && !campoYaEsta && campo
   <div class="article-wrap">
     <article class="article-card">
       {data.imagen_url && !/(instagram|facebook|twitter|x)\.com/i.test(data.imagen_url) && (
-        <img class="article-image" src={data.imagen_url} alt={data.titulo} />
+        <img class="article-image" src={fotoLocal(data.imagen_url)} alt={data.titulo} />
       )}
       <div class="article-body">
         <span class="category">{data.categoria || 'General'}</span>
