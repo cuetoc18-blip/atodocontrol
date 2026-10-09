@@ -47,12 +47,13 @@
     text-transform: uppercase;
     color: #0f172a;
   }
+  .footer-col, .footer-social { width: 100%; text-align: center; }
   .footer-links { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px 16px; }
   .footer-links a, .footer-social span { color: #334155; text-decoration: none; font-size: .92rem; }
   .footer-social span { display: block; margin-bottom: 8px; }
-  .social-row { display: flex; gap: 16px; justify-content: center; }
+  .social-row { display: flex; gap: 16px; justify-content: center; align-items: center; }
   .social-row a { width: 32px; height: 32px; display: grid; place-items: center; }
-  .social-row img { width: 28px; height: 28px; object-fit: contain; display: block; }
+  .social-row img { width: 28px; height: 28px; object-fit: contain; display: block; background: transparent; }
   .site-footer::after {
     content: "";
     display: block;
