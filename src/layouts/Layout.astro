@@ -1,5 +1,6 @@
 ---
 import '../styles/global.css';
+import Footer from '../components/Footer.astro';
 const {
   title = 'A Todo Control | Veeduría ciudadana y control político',
   description = 'Medio de veeduría ciudadana y control político.',
@@ -31,9 +32,6 @@ const {
     <meta name="twitter:description" content={description} />
     <meta name="twitter:image" content={image} />
   </head>
----
-import Footer from '../components/Footer.astro';
----
 <Footer />
   <body>
     <header>
