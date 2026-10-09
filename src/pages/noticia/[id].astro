@@ -12,8 +12,9 @@ if (!data) {
 
 const title = `${data.titulo} | A Todo Control`;
 const description = (data.resumen || data.titulo || '').slice(0, 180);
-const image = data.imagen_url && !/(instagram|facebook|twitter|x)\.com/i.test(data.imagen_url || '')
-  ? `https://atodocontrol.co/og/${id}.jpg`
+const fotoOg = String(data.imagen_url || '').match(/\/noticias-imagenes\/(.+)$/);
+const image = fotoOg
+  ? `https://atodocontrol.co/media/${fotoOg[1]}`
   : 'https://atodocontrol.co/og-default.jpg';
 const url = `https://atodocontrol.co/noticia/${id}`;
 const fecha = new Date(data.fecha_publicacion || data.created_at);
