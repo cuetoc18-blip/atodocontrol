@@ -1,0 +1,92 @@
+---
+---
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Iniciar sesión | A Todo Control</title>
+  <style>
+    body { font-family: system-ui, sans-serif; background: #f9fafb; margin: 0; }
+    .box { max-width: 420px; margin: 40px auto; background: white; padding: 28px; border-radius: 12px; box-shadow: 0 1px 4px rgba(0,0,0,.08); }
+    h1 { font-size: 22px; margin: 0 0 20px; text-align: center; }
+    label { display: block; font-size: 14px; margin: 14px 0 6px; }
+    input { width: 100%; padding: 12px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 16px; box-sizing: border-box; }
+    button { width: 100%; margin-top: 18px; padding: 14px; background: #b91c1c; color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: 600; cursor: pointer; }
+    .switch { text-align: center; margin-top: 16px; font-size: 14px; }
+    .switch a { color: #b91c1c; cursor: pointer; text-decoration: underline; }
+    .avatar { width: 80px; height: 80px; border-radius: 50%; background: #e5e7eb; margin: 0 auto 16px; display: flex; align-items: center; justify-content: center; overflow: hidden; cursor: pointer; }
+    .avatar img { width: 100%; height: 100%; object-fit: cover; }
+    .msg { text-align: center; color: #b91c1c; font-size: 14px; margin-top: 10px; min-height: 20px; }
+  </style>
+</head>
+<body>
+  <div class="box">
+    <h1 id="titulo">Crear cuenta</h1>
+    <div class="avatar" id="avatarPreview"><span>Foto</span></div>
+    <input type="file" id="avatar" accept="image/*" style="display:none" />
+    <label>Nombre</label>
+    <input type="text" id="nombre" placeholder="Tu nombre" />
+    <label>Correo</label>
+    <input type="email" id="email" placeholder="correo@ejemplo.com" />
+    <label>Contraseña</label>
+    <input type="password" id="password" placeholder="Mínimo 6 caracteres" />
+    <button id="btn">Crear cuenta</button>
+    <div class="switch">
+      <span id="switchText">¿Ya tienes cuenta? </span><a id="switchLink">Iniciar sesión</a>
+    </div>
+    <div class="msg" id="msg"></div>
+  </div>
+
+  <script>
+    let modo = 'registro';
+    const titulo = document.getElementById('titulo');
+    const btn = document.getElementById('btn');
+    const switchLink = document.getElementById('switchLink');
+    const switchText = document.getElementById('switchText');
+    const msg = document.getElementById('msg');
+    const avatarInput = document.getElementById('avatar');
+    const avatarPreview = document.getElementById('avatarPreview');
+    const nombreInput = document.getElementById('nombre');
+
+    avatarPreview.onclick = () => avatarInput.click();
+    avatarInput.onchange = () => {
+      const f = avatarInput.files[0];
+      if (f) avatarPreview.innerHTML = `<img src="${URL.createObjectURL(f)}" />`;
+    };
+
+    switchLink.onclick = () => {
+      modo = modo === 'registro' ? 'login' : 'registro';
+      titulo.textContent = modo === 'registro' ? 'Crear cuenta' : 'Iniciar sesión';
+      btn.textContent = modo === 'registro' ? 'Crear cuenta' : 'Entrar';
+      switchText.textContent = modo === 'registro' ? '¿Ya tienes cuenta? ' : '¿No tienes cuenta? ';
+      switchLink.textContent = modo === 'registro' ? 'Iniciar sesión' : 'Crear cuenta';
+      nombreInput.style.display = modo === 'registro' ? 'block' : 'none';
+      avatarPreview.style.display = modo === 'registro' ? 'flex' : 'none';
+      document.querySelector('label').style.display = modo === 'registro' ? 'block' : 'none';
+    };
+
+    btn.onclick = async () => {
+      msg.textContent = 'Procesando...';
+      const email = document.getElementById('email').value;
+      const password = document.getElementById('password').value;
+      const nombre = document.getElementById('nombre').value;
+      const body = { email, password, nombre };
+
+      const url = modo === 'registro' ? '/api/auth/registro' : '/api/auth/login-usuario';
+      try {
+        const res = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify(body)
+        });
+        const data = await res.json();
+        if (!res.ok) { msg.textContent = data.error || 'Error'; return; }
+        location.href = '/';
+      } catch (e) {
+        msg.textContent = 'Error de conexión';
+      }
+    };
+  </script>
+</body>
+</html>
