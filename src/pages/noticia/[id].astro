@@ -151,7 +151,8 @@ const hayX = cuerpo.some(b => b.tipo === 'x') || (campo && !campoYaEsta && campo
       const nombre = c.perfiles?.nombre || 'Usuario';
       const avatar = c.perfiles?.avatar_url || '';
       const fecha = new Date(c.created_at).toLocaleString('es-CO', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
-      html += `<div class="comentario">
+      html += `
+<div class="comentario">
         ${avatar ? `<img src="${avatar}" alt="" />` : '<div class="avatar"></div>'}
         <div>
           <div class="nombre">${nombre}</div>
