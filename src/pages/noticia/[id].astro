@@ -114,83 +114,15 @@ const hayX = cuerpo.some(b => b.tipo === 'x') || (campo && !campoYaEsta && campo
             <div class="fb-embed"><iframe src={`https://www.facebook.com/plugins/${b.video ? 'video' : 'post'}.php?href=${encodeURIComponent(b.fb)}&show_text=true&width=500`} allowfullscreen loading="lazy" title="Facebook"></iframe></div>
           ))}
         </div>
+
+        <!-- COMENTARIOS -->
+        <div id="comentarios" class="comentarios" data-noticia={id}></div>
       </div>
-      <div id="comentarios" class="comentarios" data-noticia={id}></div>
-
-<style>
-  .comentarios { margin-top: 32px; padding-top: 20px; border-top: 1px solid #e5e7eb; }
-  .comentarios h3 { font-size: 18px; margin: 0 0 16px; }
-  .comentario { display: flex; gap: 12px; margin-bottom: 16px; }
-  .comentario img, .comentario .avatar { width: 40px; height: 40px; border-radius: 50%; background: #e5e7eb; object-fit: cover; flex-shrink: 0; }
-  .comentario .nombre { font-weight: 600; font-size: 14px; }
-  .comentario .texto { font-size: 15px; margin: 4px 0; }
-  .comentario .fecha { font-size: 12px; color: #6b7280; }
-  .form-com { margin-top: 20px; }
-  .form-com textarea { width: 100%; min-height: 80px; padding: 10px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 15px; box-sizing: border-box; }
-  .form-com button { margin-top: 8px; padding: 10px 18px; background: #b91c1c; color: white; border: none; border-radius: 8px; cursor: pointer; }
-  .aviso { background: #f3f4f6; padding: 14px; border-radius: 8px; text-align: center; font-size: 14px; }
-  .aviso a { color: #b91c1c; font-weight: 600; }
-</style>
-
-<script>
-  const box = document.getElementById('comentarios');
-  const nid = box.dataset.noticia;
-
-  async function cargar() {
-    const res = await fetch(`/api/comentarios/${nid}`);
-    const lista = await res.json();
-    let sesion = false;
-    try {
-      const s = await fetch('/api/sesion-usuario', { credentials: 'include' });
-      sesion = s.ok;
-    } catch (e) {}
-
-    let html = '<h3>Comentarios</h3>';
-    if (lista.length === 0) html += '<p style="color:#6b7280;font-size:14px;">Sé el primero en comentar.</p>';
-    lista.forEach(c => {
-      const nombre = c.perfiles?.nombre || 'Usuario';
-      const avatar = c.perfiles?.avatar_url || '';
-      const fecha = new Date(c.created_at).toLocaleString('es-CO', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
-      html += `
-<div class="comentario">
-        ${avatar ? `<img src="${avatar}" alt="" />` : '<div class="avatar"></div>'}
-        <div>
-          <div class="nombre">${nombre}</div>
-          <div class="texto">${c.texto.replace(/</g, '<')}</div>
-          <div class="fecha">${fecha}</div>
-        </div>
-      </div>`;
-    });
-
-    if (sesion) {
-      html += `<div class="form-com">
-        <textarea id="txt" placeholder="Escribe tu comentario..."></textarea>
-        <button id="enviar">Publicar</button>
-      </div>`;
-    } else {
-      html += `<div class="aviso">Debes <a href="/login">iniciar sesión</a> para comentar.</div>`;
-    }
-    box.innerHTML = html;
-
-    if (sesion) {
-      document.getElementById('enviar').onclick = async () => {
-        const texto = document.getElementById('txt').value.trim();
-        if (!texto) return;
-        await fetch(`/api/comentarios/${nid}`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          credentials: 'include',
-          body: JSON.stringify({ texto })
-        });
-        cargar();
-      };
-    }
-  }
-  cargar();
-</script>
- </article>
+    </article>
   </div>
+
   {hayX && <script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>}
+
   <script define:vars={{ id }} is:inline>
     (function () {
       try {
@@ -204,5 +136,85 @@ const hayX = cuerpo.some(b => b.tipo === 'x') || (campo && !campoYaEsta && campo
         });
       } catch (e) {}
     })();
+  </script>
+
+  <style>
+    .comentarios { margin-top: 32px; padding-top: 20px; border-top: 1px solid #e5e7eb; }
+    .comentarios h3 { font-size: 18px; margin: 0 0 16px; }
+    .comentario { display: flex; gap: 12px; margin-bottom: 16px; }
+    .comentario img, .comentario .avatar { width: 40px; height: 40px; border-radius: 50%; background: #e5e7eb; object-fit: cover; flex-shrink: 0; }
+    .comentario .nombre { font-weight: 600; font-size: 14px; }
+    .comentario .texto { font-size: 15px; margin: 4px 0; }
+    .comentario .fecha { font-size: 12px; color: #6b7280; }
+    .form-com { margin-top: 20px; }
+    .form-com textarea { width: 100%; min-height: 80px; padding: 10px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 15px; box-sizing: border-box; }
+    .form-com button { margin-top: 8px; padding: 10px 18px; background: #b91c1c; color: white; border: none; border-radius: 8px; cursor: pointer; }
+    .aviso { background: #f3f4f6; padding: 14px; border-radius: 8px; text-align: center; font-size: 14px; }
+    .aviso a { color: #b91c1c; font-weight: 600; }
+  </style>
+
+  <script>
+    const box = document.getElementById('comentarios');
+    const nid = box?.dataset.noticia;
+    if (!box || !nid) console.warn('No se encontró el contenedor de comentarios');
+
+    async function cargar() {
+      let lista = [];
+      let sesion = false;
+      try {
+        const res = await fetch(`/api/comentarios/${nid}`);
+        if (res.ok) lista = await res.json();
+      } catch (e) { console.warn('Error cargando comentarios', e); }
+      try {
+        const s = await fetch('/api/sesion-usuario', { credentials: 'include' });
+        sesion = s.ok;
+      } catch (e) {}
+
+      let html = '<h3>Comentarios</h3>';
+      if (!lista.length) {
+        html += '<p style="color:#6b7280;font-size:14px;">Sé el primero en comentar.</p>';
+      }
+      lista.forEach(c => {
+        const nombre = c.perfiles?.nombre || 'Usuario';
+        const avatar = c.perfiles?.avatar_url || '';
+        const fecha = new Date(c.created_at).toLocaleString('es-CO', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+        html += `<div class="comentario">
+          ${avatar ? `<img src="${avatar}" alt="" />` : '<div class="avatar"></div>'}
+          <div>
+            <div class="nombre">${nombre}</div>
+            <div class="texto">${(c.texto || '').replace(/</g, '<')}</div>
+            <div class="fecha">${fecha}</div>
+          </div>
+        </div>`;
+      });
+
+      if (sesion) {
+        html += `<div class="form-com">
+          <textarea id="txt" placeholder="Escribe tu comentario..."></textarea>
+          <button id="enviar">Publicar</button>
+        </div>`;
+      } else {
+        html += `<div class="aviso">Debes <a href="/login">iniciar sesión</a> para comentar.</div>`;
+      }
+      box.innerHTML = html;
+
+      const btn = document.getElementById('enviar');
+      if (btn) {
+        btn.onclick = async () => {
+          const texto = document.getElementById('txt').value.trim();
+          if (!texto) return;
+          try {
+            await fetch(`/api/comentarios/${nid}`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              credentials: 'include',
+              body: JSON.stringify({ texto })
+            });
+            cargar();
+          } catch (e) { console.warn(e); }
+        };
+      }
+    }
+    cargar();
   </script>
 </Layout>
