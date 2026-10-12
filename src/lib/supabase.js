@@ -1,42 +1,25 @@
 import { createClient } from '@supabase/supabase-js';
 
-function credenciales() {
-  const url = import.meta.env.SUPABASE_URL || 'https://hlqdkosclnmmdhasoupt.supabase.co';
-  const key = import.meta.env.SUPABASE_ANON_KEY || 'sb_publishable_hw4WsIr-GvZU7PEu_KNNEw_tC-98Nst';
-  return { url, key };
-}
+const url = import.meta.env.SUPABASE_URL || process.env.SUPABASE_URL;
+const key = import.meta.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-export function anonClient() {
-  const { url, key } = credenciales();
+export function supabase() {
+  if (!url || !key) throw new Error('Faltan SUPABASE_URL o SUPABASE_SERVICE_ROLE_KEY');
   return createClient(url, key, { auth: { persistSession: false } });
 }
 
-export function userClient(token) {
-  const { url, key } = credenciales();
-  return createClient(url, key, {
-    auth: { persistSession: false },
-    global: { headers: { Authorization: `Bearer ${token}` } }
-  });
+// Helpers that the article page uses
+export function igPermalink(text) {
+  const m = String(text || '').match(/instagram\.com\/(?:p|reel|tv)\/([A-Za-z0-9_-]+)/i);
+  return m ? `https://www.instagram.com/p/${m[1]}/` : null;
 }
 
-export function supabase() {
-  return anonClient();
+export function xStatusId(text) {
+  const m = String(text || '').match(/(?:twitter|x)\.com\/[^/]+\/status\/(\d+)/i);
+  return m ? m[1] : null;
 }
 
-export function igPermalink(url = '') {
-  const m = String(url).match(/instagram\.com\/(reel|p|tv)\/([A-Za-z0-9_-]+)/i);
-  if (!m) return '';
-  return `https://www.instagram.com/${m[1].toLowerCase()}/${m[2]}/`;
-}
-
-export function xStatusId(url = '') {
-  const m = String(url).match(/(?:twitter|x)\.com\/(?:[^/\s]+\/)?(?:status|i\/web\/status|i\/status)\/(\d+)/i)
-    || String(url).match(/\/status\/(\d+)/i);
-  return m ? m[1] : '';
-}
-
-export function fbPermalink(url = '') {
-  const u = String(url).trim();
-  if (!/facebook\.com|fb\.watch/i.test(u)) return '';
-  return u.split('?')[0];
+export function fbPermalink(text) {
+  const m = String(text || '').match(/facebook\.com\/(?:[^/]+\/)?(?:posts|videos|reel|share)\/[^?\s]+/i);
+  return m ? m[0].startsWith('http') ? m[0] : `https://www.facebook.com/${m[0]}` : null;
 }
