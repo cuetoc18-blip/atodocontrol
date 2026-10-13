@@ -37,7 +37,7 @@
   </div>
   <script>
     let modo = 'login';
-    function toggle() {
+    window.toggle = function() {
       modo = modo === 'login' ? 'registro' : 'login';
       document.getElementById('titulo').textContent = modo === 'login' ? 'Iniciar sesión' : 'Crear cuenta';
       document.getElementById('btn').textContent = modo === 'login' ? 'Entrar' : 'Crear cuenta';
@@ -46,7 +46,7 @@
         ? '¿No tienes cuenta? <a onclick="toggle()">Crear cuenta</a>'
         : '¿Ya tienes cuenta? <a onclick="toggle()">Iniciar sesión</a>';
       document.getElementById('error').textContent = '';
-    }
+    };
     document.getElementById('form').onsubmit = async (e) => {
       e.preventDefault();
       const email = document.getElementById('email').value;
