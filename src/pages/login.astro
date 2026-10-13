@@ -16,17 +16,19 @@
     .link a { color: #b91c1c; font-weight: 600; cursor: pointer; }
     .error { color: #b91c1c; text-align: center; margin-top: 12px; font-size: 14px; }
     .hidden { display: none; }
+    #preview { width: 80px; height: 80px; border-radius: 50%; margin: 0 auto 12px; display: block; background: #e5e7eb; }
   </style>
 </head>
 <body>
   <div class="card">
     <h1 id="titulo">Iniciar sesión</h1>
+    <img id="preview" alt="Avatar" style="display:none;">
     <form id="form">
       <div id="extra" class="hidden">
         <label>Nombre</label>
-        <input type="text" id="nombre">
+        <input type="text" id="nombre" oninput="actualizarPreview()">
         <label>Género</label>
-        <select id="genero">
+        <select id="genero" onchange="actualizarPreview()">
           <option value="m">Hombre</option>
           <option value="f">Mujer</option>
         </select>
@@ -42,15 +44,27 @@
   </div>
   <script>
     let modo = 'login';
+    function actualizarPreview() {
+      if (modo !== 'registro') return;
+      const nombre = document.getElementById('nombre').value || 'Usuario';
+      const genero = document.getElementById('genero').value;
+      const estilo = genero === 'f' ? 'lorelei' : 'adventurer';
+      const url = `https://api.dicebear.com/7.x/${estilo}/svg?seed=${encodeURIComponent(nombre)}&backgroundColor=b6e3f4,c0aede,d1d4f9`;
+      const img = document.getElementById('preview');
+      img.src = url;
+      img.style.display = 'block';
+    }
     window.toggle = function() {
       modo = modo === 'login' ? 'registro' : 'login';
       document.getElementById('titulo').textContent = modo === 'login' ? 'Iniciar sesión' : 'Crear cuenta';
       document.getElementById('btn').textContent = modo === 'login' ? 'Entrar' : 'Crear cuenta';
       document.getElementById('extra').classList.toggle('hidden', modo === 'login');
+      document.getElementById('preview').style.display = modo === 'registro' ? 'block' : 'none';
       document.getElementById('switch').innerHTML = modo === 'login'
         ? '¿No tienes cuenta? <a onclick="toggle()">Crear cuenta</a>'
         : '¿Ya tienes cuenta? <a onclick="toggle()">Iniciar sesión</a>';
       document.getElementById('error').textContent = '';
+      if (modo === 'registro') actualizarPreview();
     };
     document.getElementById('form').onsubmit = async (e) => {
       e.preventDefault();
