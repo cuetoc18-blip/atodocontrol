@@ -1,56 +1,88 @@
 ---
-const { title = 'A Todo Control', description = '', image = '', url = '' } = Astro.props;
+import '../styles/global.css';
+import Footer from '../components/Footer.astro';
+const {
+  title = 'A Todo Control | Veeduría ciudadana y control político',
+  description = 'Medio de veeduría ciudadana y control político.',
+  image = 'https://atodocontrol.co/og-default.jpg',
+  url = Astro.url.href,
+} = Astro.props;
 ---
+<!DOCTYPE html>
 <html lang="es">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>{title}</title>
-  <meta name="description" content={description}>
-  <meta property="og:title" content={title}>
-  <meta property="og:description" content={description}>
-  <meta property="og:image" content={image}>
-  <meta property="og:url" content={url}>
-  <link rel="icon" href="/favicon.ico">
-  <style>
-    body { margin: 0; font-family: system-ui, sans-serif; background: #f9fafb; }
-    header { background: #1e293b; color: white; display: flex; align-items: center; padding: 12px 16px; }
-    .logo { height: 40px; }
-    #user-area { margin-left: auto; display: flex; align-items: center; gap: 8px; }
-    .hamburger { background: none; border: none; color: white; font-size: 24px; cursor: pointer; margin-right: 12px; }
-  </style>
-</head>
-<body>
-  <header>
-    <button class="hamburger" id="hamburger" type="button" aria-label="Menú">☰</button>
-    <a href="/"><img src="/logo-sm.webp" alt="A Todo Control" class="logo"></a>
-    <div id="user-area"></div>
-  </header>
-
-  <slot />
-
-  <script>
-    async function pintarUsuario() {
-      const area = document.getElementById('user-area');
-      if (!area) return;
-      try {
-        const res = await fetch('/api/sesion-usuario', { credentials: 'include' });
-        if (!res.ok) {
-          area.innerHTML = '<a href="/login" style="color:white;font-size:14px;font-weight:600;text-decoration:none;">Iniciar sesión</a>';
-          return;
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" type="image/png" href="/favicon.png" sizes="48x48" />
+    <link rel="apple-touch-icon" href="/favicon.png" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={url} />
+    <meta property="og:type" content="article" />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:image" content={image} />
+    <meta property="og:image:secure_url" content={image} />
+    <meta property="og:image:type" content="image/jpeg" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:url" content={url} />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={title} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={image} />
+  </head>
+  <body>
+    <header>
+      <div class="header-container">
+        <button class="hamburger" id="hamburger" type="button" aria-label="Menú">
+          <span></span><span></span><span></span>
+        </button>
+        <a class="logo" href="/"><img src="/logo-sm.webp" alt="A Todo Control" /></a>
+        <div id="user-area" style="margin-left:auto;display:flex;align-items:center;gap:8px;padding-right:16px;"></div>
+      </div>
+      <nav class="menu-panel" id="menuPanel">
+        <a href="/">Inicio</a>
+        <a href="/?cat=Control%20Político">Control Político</a>
+        <a href="/?cat=Internacional">Internacional</a>
+        <a href="/?cat=Política%20Local">Política Local</a>
+        <a href="/?cat=Alcaldía">Alcaldía</a>
+        <a href="/?cat=Seguridad">Seguridad</a>
+        <a href="/?cat=Comunidad">Comunidad</a>
+        <a href="/?cat=Opinión">Opinión</a>
+      </nav>
+    </header>
+    <slot />
+    <Footer />
+    <footer>
+    </footer>
+    <script is:inline>
+      const h = document.getElementById('hamburger');
+      const p = document.getElementById('menuPanel');
+      if (h && p) h.addEventListener('click', () => p.classList.toggle('open'));
+    </script>
+    <script>
+      async function pintarUsuario() {
+        const area = document.getElementById('user-area');
+        if (!area) return;
+        try {
+          const res = await fetch('/api/sesion-usuario', { credentials: 'include' });
+          if (!res.ok) {
+            area.innerHTML = '<a href="/login" style="color:white;font-size:14px;font-weight:600;text-decoration:none;">Iniciar sesión</a>';
+            return;
+          }
+          const data = await res.json();
+          const inicial = (data.nombre || 'U').charAt(0).toUpperCase();
+          const color = data.genero === 'f' ? '#db2777' : '#2563eb';
+          area.innerHTML = `
+            <div style="width:32px;height:32px;border-radius:50%;background:${color};color:white;display:flex;align-items:center;justify-content:center;font-weight:600;font-size:14px">${inicial}</div>
+            <span style="color:white;font-size:14px;">${data.nombre}</span>
+          `;
+        } catch (e) {
+          area.innerHTML = '<a href="/login" style="color:white;font-size:14px;text-decoration:none;">Iniciar sesión</a>';
         }
-        const data = await res.json();
-        const inicial = (data.nombre || 'U').charAt(0).toUpperCase();
-        const color = data.genero === 'f' ? '#db2777' : '#2563eb';
-        area.innerHTML = `
-          <div style="width:32px;height:32px;border-radius:50%;background:${color};color:white;display:flex;align-items:center;justify-content:center;font-weight:600;font-size:14px">${inicial}</div>
-          <span style="color:white;font-size:14px;">${data.nombre}</span>
-        `;
-      } catch (e) {
-        area.innerHTML = '<a href="/login" style="color:white;font-size:14px;text-decoration:none;">Iniciar sesión</a>';
       }
-    }
-    pintarUsuario();
-  </script>
-</body>
+      pintarUsuario();
+    </script>
+  </body>
 </html>
