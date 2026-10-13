@@ -115,7 +115,7 @@ const hayX = cuerpo.some(b => b.tipo === 'x') || (campo && !campoYaEsta && campo
           ))}
         </div>
 
-        <div id="comentarios" class="comentarios" data-noticia={id}></div>
+        <div id="comentarios" data-noticia={id}></div>
       </div>
     </article>
   </div>
@@ -137,24 +137,6 @@ const hayX = cuerpo.some(b => b.tipo === 'x') || (campo && !campoYaEsta && campo
     })();
   </script>
 
-  <style>
-    .comentarios { margin-top: 40px; padding-top: 24px; border-top: 1px solid #eee; }
-    .comentarios h3 { font-size: 22px; font-weight: 700; margin: 0 0 16px; color: #1a1a1a; }
-    .com-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
-    .com-sort { font-size: 13px; color: #666; }
-    .com-form { background: #fff; border: 1px solid #e5e7eb; border-radius: 12px; padding: 12px; margin-bottom: 20px; }
-    .com-form textarea { width: 100%; min-height: 80px; border: none; resize: none; font-size: 15px; outline: none; }
-    .com-form-footer { display: flex; justify-content: space-between; align-items: center; margin-top: 8px; }
-    .com-form button { background: #e11d48; color: white; border: none; padding: 10px 22px; border-radius: 8px; font-weight: 600; cursor: pointer; }
-    .com-item { display: flex; gap: 12px; padding: 16px 0; border-bottom: 1px solid #f3f4f6; }
-    .com-avatar { width: 40px; height: 40px; border-radius: 50%; background: #e5e7eb; flex-shrink: 0; }
-    .com-name { font-weight: 600; font-size: 14px; }
-    .com-text { font-size: 15px; margin: 4px 0; line-height: 1.4; }
-    .com-meta { font-size: 12px; color: #6b7280; margin-top: 6px; display: flex; gap: 16px; }
-    .aviso { background: #f9fafb; border-radius: 12px; padding: 20px; text-align: center; }
-    .aviso a { color: #e11d48; font-weight: 600; }
-  </style>
-
   <script>
     const box = document.getElementById('comentarios');
     const nid = box?.dataset.noticia;
@@ -162,73 +144,44 @@ const hayX = cuerpo.some(b => b.tipo === 'x') || (campo && !campoYaEsta && campo
     async function cargar() {
       let lista = [];
       let sesion = false;
-      try {
-        const res = await fetch(`/api/comentarios/${nid}`);
-        if (res.ok) lista = await res.json();
-      } catch (e) {}
-      try {
-        const s = await fetch('/api/sesion-usuario', { credentials: 'include' });
-        sesion = s.ok;
-      } catch (e) {}
+      try { const r = await fetch('/api/comentarios/' + nid); if (r.ok) lista = await r.json(); } catch(e){}
+      try { const s = await fetch('/api/sesion-usuario', {credentials:'include'}); sesion = s.ok; } catch(e){}
 
-      let html = `
-        <div class="com-header">
-          <h3>Comentarios</h3>
-          <span class="com-sort">Más recientes</span>
-        </div>
-      `;
+      let h = '<div style="margin-top:40px;border-top:1px solid #eee;padding-top:24px">';
+      h += '<div style="display:flex;justify-content:space-between;margin-bottom:16px"><h3 style="margin:0;font-size:22px;font-weight:700">Comentarios</h3><span style="font-size:13px;color:#666">Más recientes</span></div>';
 
       if (sesion) {
-        html += `
-          <div class="com-form">
-            <textarea id="txt" placeholder="Escribe tu comentario..."></textarea>
-            <div class="com-form-footer">
-              <span style="font-size:13px;color:#9ca3af;">0/500</span>
-              <button id="enviar">Publicar</button>
-            </div>
-          </div>
-        `;
+        h += '<div style="border:1px solid #e5e7eb;border-radius:12px;padding:12px;margin-bottom:20px;background:#fff">';
+        h += '<textarea id="txt" placeholder="Escribe tu comentario..." style="width:100%;height:80px;border:none;outline:none;font-size:15px;resize:none;box-sizing:border-box"></textarea>';
+        h += '<div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px"><span style="font-size:13px;color:#999">0/500</span><button id="enviar" style="background:#e11d48;color:#fff;border:none;padding:10px 22px;border-radius:8px;font-weight:600;cursor:pointer">Publicar</button></div>';
+        h += '</div>';
       } else {
-        html += `<div class="aviso">Debes <a href="/login">iniciar sesión</a> para comentar.</div>`;
+        h += '<div style="background:#f9fafb;border-radius:12px;padding:20px;text-align:center;margin-bottom:20px">Debes <a href="/login" style="color:#e11d48;font-weight:600">iniciar sesión</a> para comentar.</div>';
       }
 
-      html += `<div style="font-size:13px;color:#6b7280;margin:16px 0 8px;">${lista.length} comentario${lista.length !== 1 ? 's' : ''}</div>`;
+      h += '<div style="font-size:13px;color:#6b7280;margin-bottom:12px">' + lista.length + ' comentario' + (lista.length!==1?'s':'') + '</div>';
 
       lista.forEach(c => {
-        const nombre = c.perfiles?.nombre || 'Usuario';
-        const avatar = c.perfiles?.avatar_url || '';
-        const fecha = new Date(c.created_at).toLocaleString('es-CO', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
-        html += `
-          <div class="com-item">
-            ${avatar ? `<img src="${avatar}" class="com-avatar" style="object-fit:cover;" />` : '<div class="com-avatar"></div>'}
-            <div>
-              <div class="com-name">${nombre}</div>
-              <div class="com-text">${(c.texto || '').replace(/</g, '<')}</div>
-              <div class="com-meta">
-                <span>${fecha}</span>
-                <span>Responder</span>
-              </div>
-            </div>
-          </div>
-        `;
+        const n = c.perfiles?.nombre || 'Usuario';
+        const a = c.perfiles?.avatar_url || '';
+        const f = new Date(c.created_at).toLocaleString('es-CO',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});
+        h += '<div style="display:flex;gap:12px;padding:16px 0;border-bottom:1px solid #f3f4f6">';
+        h += a ? '<img src="'+a+'" style="width:40px;height:40px;border-radius:50%;object-fit:cover">' : '<div style="width:40px;height:40px;border-radius:50%;background:#e5e7eb"></div>';
+        h += '<div><div style="font-weight:600;font-size:14px">'+n+'</div>';
+        h += '<div style="font-size:15px;margin:4px 0">'+(c.texto||'').replace(/</g,'<')+'</div>';
+        h += '<div style="font-size:12px;color:#6b7280;margin-top:6px">'+f+'</div></div></div>';
       });
 
-      box.innerHTML = html;
+      h += '</div>';
+      box.innerHTML = h;
 
       const btn = document.getElementById('enviar');
-      if (btn) {
-        btn.onclick = async () => {
-          const texto = document.getElementById('txt').value.trim();
-          if (!texto) return;
-          await fetch(`/api/comentarios/${nid}`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            credentials: 'include',
-            body: JSON.stringify({ texto })
-          });
-          cargar();
-        };
-      }
+      if (btn) btn.onclick = async () => {
+        const t = document.getElementById('txt').value.trim();
+        if (!t) return;
+        await fetch('/api/comentarios/'+nid, {method:'POST', headers:{'Content-Type':'application/json'}, credentials:'include', body:JSON.stringify({texto:t})});
+        cargar();
+      };
     }
     if (box && nid) cargar();
   </script>
