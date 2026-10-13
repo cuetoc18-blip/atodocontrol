@@ -13,33 +13,52 @@
     input { width: 100%; padding: 12px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 16px; box-sizing: border-box; }
     button { width: 100%; margin-top: 20px; padding: 14px; background: #b91c1c; color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: 600; cursor: pointer; }
     .link { text-align: center; margin-top: 16px; font-size: 14px; }
-    .link a { color: #b91c1c; font-weight: 600; }
+    .link a { color: #b91c1c; font-weight: 600; cursor: pointer; }
     .error { color: #b91c1c; text-align: center; margin-top: 12px; font-size: 14px; }
+    .hidden { display: none; }
   </style>
 </head>
 <body>
   <div class="card">
-    <h1>Iniciar sesión</h1>
+    <h1 id="titulo">Iniciar sesión</h1>
     <form id="form">
+      <div id="nombre-wrap" class="hidden">
+        <label>Nombre</label>
+        <input type="text" id="nombre">
+      </div>
       <label>Correo</label>
       <input type="email" id="email" required>
       <label>Contraseña</label>
       <input type="password" id="password" required>
-      <button type="submit">Entrar</button>
+      <button type="submit" id="btn">Entrar</button>
     </form>
     <div id="error" class="error"></div>
-    <div class="link">¿No tienes cuenta? <a href="/login">Crear cuenta</a></div>
+    <div class="link" id="switch">¿No tienes cuenta? <a onclick="toggle()">Crear cuenta</a></div>
   </div>
   <script>
+    let modo = 'login';
+    function toggle() {
+      modo = modo === 'login' ? 'registro' : 'login';
+      document.getElementById('titulo').textContent = modo === 'login' ? 'Iniciar sesión' : 'Crear cuenta';
+      document.getElementById('btn').textContent = modo === 'login' ? 'Entrar' : 'Crear cuenta';
+      document.getElementById('nombre-wrap').classList.toggle('hidden', modo === 'login');
+      document.getElementById('switch').innerHTML = modo === 'login'
+        ? '¿No tienes cuenta? <a onclick="toggle()">Crear cuenta</a>'
+        : '¿Ya tienes cuenta? <a onclick="toggle()">Iniciar sesión</a>';
+      document.getElementById('error').textContent = '';
+    }
     document.getElementById('form').onsubmit = async (e) => {
       e.preventDefault();
       const email = document.getElementById('email').value;
       const password = document.getElementById('password').value;
-      const res = await fetch('/api/auth/login-usuario', {
+      const nombre = document.getElementById('nombre').value;
+      const url = modo === 'login' ? '/api/auth/login-usuario' : '/api/auth/registro';
+      const body = modo === 'login' ? { email, password } : { email, password, nombre };
+      const res = await fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
-        body: JSON.stringify({ email, password })
+        body: JSON.stringify(body)
       });
       const data = await res.json();
       if (!res.ok) {
