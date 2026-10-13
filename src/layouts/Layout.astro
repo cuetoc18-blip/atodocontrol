@@ -40,6 +40,30 @@ const {
         </button>
         <a class="logo" href="/"><img src="/logo-sm.webp" alt="A Todo Control" /></a>
       </div>
+<div id="user-area" style="margin-left:auto;display:flex;align-items:center;gap:8px;padding-right:16px;"></div>
+<script>
+async function pintarUsuario() {
+  const area = document.getElementById('user-area');
+  if (!area) return;
+  try {
+    const res = await fetch('/api/sesion-usuario', { credentials: 'include' });
+    if (!res.ok) {
+      area.innerHTML = '<a href="/login" style="color:white;font-size:14px;font-weight:600;text-decoration:none;">Iniciar sesión</a>';
+      return;
+    }
+    const data = await res.json();
+    const inicial = (data.nombre || 'U').charAt(0).toUpperCase();
+    const color = data.genero === 'f' ? '#db2777' : '#2563eb';
+    area.innerHTML = `
+      <div style="width:32px;height:32px;border-radius:50%;background:${color};color:white;display:flex;align-items:center;justify-content:center;font-weight:600;font-size:14px">${inicial}</div>
+      <span style="color:white;font-size:14px;">${data.nombre}</span>
+    `;
+  } catch (e) {
+    area.innerHTML = '<a href="/login" style="color:white;font-size:14px;text-decoration:none;">Iniciar sesión</a>';
+  }
+}
+pintarUsuario();
+<script>
       <nav class="menu-panel" id="menuPanel">
         <a href="/">Inicio</a>
         <a href="/?cat=Control%20Político">Control Político</a>
