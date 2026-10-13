@@ -72,11 +72,12 @@ const {
             return;
           }
           const data = await res.json();
-          const inicial = (data.nombre || 'U').charAt(0).toUpperCase();
-          const color = data.genero === 'f' ? '#db2777' : '#2563eb';
+          const nombre = data.nombre || 'Usuario';
+          const estilo = data.genero === 'f' ? 'lorelei' : 'adventurer';
+          const avatar = `https://api.dicebear.com/7.x/${estilo}/svg?seed=${encodeURIComponent(nombre)}&backgroundColor=b6e3f4,c0aede,d1d4f9`;
           area.innerHTML = `
-            <div style="width:32px;height:32px;border-radius:50%;background:${color};color:white;display:flex;align-items:center;justify-content:center;font-weight:600;font-size:14px">${inicial}</div>
-            <span style="color:white;font-size:14px;">${data.nombre}</span>
+            <img src="${avatar}" alt="${nombre}" style="width:32px;height:32px;border-radius:50%;object-fit:cover;">
+            <span style="color:white;font-size:14px;">${nombre}</span>
           `;
         } catch (e) {
           area.innerHTML = '<a href="/login" style="color:white;font-size:14px;text-decoration:none;">Iniciar sesión</a>';
