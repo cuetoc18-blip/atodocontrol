@@ -14,6 +14,14 @@ export function anonClient() {
   return createClient(url, anonKey, { auth: { persistSession: false } });
 }
 
+export function userClient(accessToken) {
+  if (!url || !anonKey) throw new Error('Faltan SUPABASE_URL o SUPABASE_ANON_KEY');
+  return createClient(url, anonKey, {
+    auth: { persistSession: false },
+    global: { headers: { Authorization: `Bearer ${accessToken}` } }
+  });
+}
+
 export function igPermalink(text) {
   const m = String(text || '').match(/instagram\.com\/(?:p|reel|tv)\/([A-Za-z0-9_-]+)/i);
   return m ? `https://www.instagram.com/p/${m[1]}/` : null;
