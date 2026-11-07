@@ -73,6 +73,7 @@ const {
           }
           const data = await res.json();
           const nombre = data.nombre || 'Usuario';
+          // Hombre = adventurer, Mujer = lorelei
           const estilo = data.genero === 'f' ? 'lorelei' : 'adventurer';
           const avatar = `https://api.dicebear.com/7.x/${estilo}/svg?seed=${encodeURIComponent(nombre)}&backgroundColor=b6e3f4,c0aede,d1d4f9`;
           area.innerHTML = `
