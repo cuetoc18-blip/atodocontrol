@@ -22,15 +22,22 @@ export async function POST({ request }) {
     const { email, password } = await request.json();
     if (!email || !password) return new Response(JSON.stringify({ error: 'Faltan datos' }), { status: 400 });
 
-    const { data, error } = await supabase.from('perfiles').select('id, nombre, password_hash').eq('email', email).maybeSingle();
+    const { data, error } = await supabase.from('perfiles').select('id, nombre, genero, password_hash').eq('email', email).maybeSingle();
     if (error || !data) return new Response(JSON.stringify({ error: 'Correo o clave incorrectos' }), { status: 401 });
 
     if (data.password_hash !== hash(password)) {
       return new Response(JSON.stringify({ error: 'Correo o clave incorrectos' }), { status: 401 });
     }
 
-    const token = firmar({ uid: data.id, email, nombre: data.nombre, exp: Date.now() + 1000 * 60 * 60 * 24 * 7 });
-    return new Response(JSON.stringify({ ok: true, nombre: data.nombre }), {
+    const token = firmar({
+      uid: data.id,
+      email,
+      nombre: data.nombre,
+      genero: data.genero || 'm',
+      exp: Date.now() + 1000 * 60 * 60 * 24 * 7
+    });
+
+    return new Response(JSON.stringify({ ok: true, nombre: data.nombre, genero: data.genero || 'm' }), {
       headers: {
         'Set-Cookie': `usuario_session=${token}; HttpOnly; Secure; SameSite=None; Path=/; Max-Age=${60 * 60 * 24 * 7}`,
         'Content-Type': 'application/json'
