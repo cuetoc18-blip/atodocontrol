@@ -1,67 +1,69 @@
 import { createClient } from '@supabase/supabase-js';
 
-const supabase = createClient(
-  import.meta.env.SUPABASE_URL,
-  import.meta.env.SUPABASE_SERVICE_ROLE_KEY
-);
+export const prerender = false;
+
+function getSupabase() {
+  return createClient(
+    process.env.SUPABASE_URL,
+    process.env.SUPABASE_SERVICE_ROLE_KEY
+  );
+}
 
 export async function GET() {
-  const { data, error } = await supabase
-    .from('reels')
-    .select('*')
-    .eq('publicado', true)
-    .order('created_at', { ascending: false });
+  try {
+    const supabase = getSupabase();
+    const { data, error } = await supabase
+      .from('reels')
+      .select('*')
+      .order('created_at', { ascending: false })
+      .limit(10);
 
-  if (error) {
-    return new Response(JSON.stringify({ error: error.message }), { status: 500 });
+    if (error) throw error;
+    return new Response(JSON.stringify(data || []), {
+      headers: { 'Content-Type': 'application/json' }
+    });
+  } catch (e) {
+    return new Response(JSON.stringify([]), {
+      headers: { 'Content-Type': 'application/json' }
+    });
   }
-  return new Response(JSON.stringify(data || []), {
-    headers: { 'Content-Type': 'application/json' }
-  });
 }
 
 export async function POST({ request }) {
-  const form = await request.formData();
-  const titulo = form.get('titulo');
-  const descripcion = form.get('descripcion') || '';
-  const videoFile = form.get('video');
+  try {
+    const supabase = getSupabase();
+    const form = await request.formData();
+    const titulo = form.get('titulo') || '';
+    const file = form.get('video');
 
-  if (!titulo || !videoFile) {
-    return new Response(JSON.stringify({ error: 'Título y video son obligatorios' }), { status: 400 });
-  }
+    if (!file || !file.name) {
+      return new Response(JSON.stringify({ error: 'Falta el video' }), { status: 400 });
+    }
 
-  // Subir video a Storage
-  const fileName = `${Date.now()}-${videoFile.name.replace(/\s/g, '_')}`;
-  const { error: uploadError } = await supabase.storage
-    .from('reels-videos')
-    .upload(fileName, videoFile, {
-      contentType: videoFile.type,
-      upsert: false
+    const ext = file.name.split('.').pop();
+    const path = `reels/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+
+    const { error: upErr } = await supabase.storage
+      .from('noticias-imagenes')
+      .upload(path, file, { contentType: file.type, upsert: true });
+
+    if (upErr) throw upErr;
+
+    const { data: pub } = supabase.storage.from('noticias-imagenes').getPublicUrl(path);
+    const video_url = pub.publicUrl;
+
+    const { data, error } = await supabase
+      .from('reels')
+      .insert({ titulo, video_url })
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    return new Response(JSON.stringify(data), {
+      headers: { 'Content-Type': 'application/json' }
     });
-
-  if (uploadError) {
-    return new Response(JSON.stringify({ error: 'Error subiendo video: ' + uploadError.message }), { status: 500 });
+  } catch (e) {
+    return new Response(JSON.stringify({ error: e.message }), { status: 500 });
   }
-
-  const { data: publicUrl } = supabase.storage
-    .from('reels-videos')
-    .getPublicUrl(fileName);
-
-  // Guardar en tabla
-  const { data, error } = await supabase
-    .from('reels')
-    .insert({
-      titulo,
-      descripcion,
-      video_url: publicUrl.publicUrl,
-      publicado: true
-    })
-    .select()
-    .single();
-
-  if (error) {
-    return new Response(JSON.stringify({ error: error.message }), { status: 500 });
-  }
-
-  return new Response(JSON.stringify(data), { status: 201 });
 }
