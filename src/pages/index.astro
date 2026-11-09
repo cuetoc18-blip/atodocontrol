@@ -53,8 +53,10 @@ const { data: noticias } = await client
           const videoUrl = `/media/${reel.video_path}`;
           html += `
             <div class="reel-item">
-              <video src="${videoUrl}" controls playsinline preload="metadata"></video>
-              <p>${reel.titulo || ''}</p>
+              <div class="reel-video-wrap">
+                <video src="${videoUrl}" controls playsinline preload="metadata"></video>
+              </div>
+              <p class="reel-title">${reel.titulo || ''}</p>
             </div>
           `;
         }
@@ -79,9 +81,39 @@ const { data: noticias } = await client
 
   .reels-section { margin-top: 40px; }
   .reels-section h2 { color: #fff; font-size: 20px; margin-bottom: 16px; }
-  .reels-scroll { display: flex; gap: 12px; overflow-x: auto; scroll-snap-type: x mandatory; padding-bottom: 16px; }
-  .reel-item { flex: 0 0 180px; scroll-snap-align: start; }
-  .reel-item video { width: 100%; height: 320px; object-fit: cover; border-radius: 12px; background: #000; }
-  .reel-item p { margin: 8px 0 0; font-size: 13px; font-weight: 600; color: #fff; }
+  .reels-scroll { 
+    display: flex; 
+    gap: 16px; 
+    overflow-x: auto; 
+    scroll-snap-type: x mandatory; 
+    padding-bottom: 16px;
+    -webkit-overflow-scrolling: touch;
+  }
+  .reel-item { 
+    flex: 0 0 200px; 
+    scroll-snap-align: start; 
+  }
+  .reel-video-wrap {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 9/16;
+    background: #000;
+    border-radius: 12px;
+    overflow: hidden;
+  }
+  .reel-video-wrap video { 
+    width: 100%; 
+    height: 100%; 
+    object-fit: cover; 
+  }
+  .reel-title { 
+    margin: 8px 0 0; 
+    font-size: 13px; 
+    font-weight: 600; 
+    color: #fff; 
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
   .empty, .error { color: #888; text-align: center; }
 </style>
