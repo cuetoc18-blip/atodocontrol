@@ -15,8 +15,7 @@ export async function GET() {
     const { data, error } = await supabase
       .from('reels')
       .select('*')
-      .order('created_at', { ascending: false })
-      .limit(10);
+      .order('created_at', { ascending: false });
 
     if (error) throw error;
     return new Response(JSON.stringify(data || []), {
@@ -32,35 +31,36 @@ export async function GET() {
 export async function POST({ request }) {
   try {
     const supabase = getSupabase();
-    const form = await request.formData();
-    const titulo = form.get('titulo') || '';
-    const file = form.get('video');
+    const body = await request.json();
+    const { titulo, url, imagen_url } = body;
 
-    if (!file || !file.name) {
-      return new Response(JSON.stringify({ error: 'Falta el video' }), { status: 400 });
+    if (!titulo || !url) {
+      return new Response(JSON.stringify({ error: 'Faltan datos' }), { status: 400 });
     }
-
-    const ext = file.name.split('.').pop();
-    const path = `reels/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
-
-    const { error: upErr } = await supabase.storage
-      .from('noticias-imagenes')
-      .upload(path, file, { contentType: file.type, upsert: true });
-
-    if (upErr) throw upErr;
-
-    const { data: pub } = supabase.storage.from('noticias-imagenes').getPublicUrl(path);
-    const video_url = pub.publicUrl;
 
     const { data, error } = await supabase
       .from('reels')
-      .insert({ titulo, video_url })
+      .insert({ titulo, url, imagen_url: imagen_url || null })
       .select()
       .single();
 
     if (error) throw error;
 
     return new Response(JSON.stringify(data), {
+      headers: { 'Content-Type': 'application/json' }
+    });
+  } catch (e) {
+    return new Response(JSON.stringify({ error: e.message }), { status: 500 });
+  }
+}
+
+export async function DELETE({ params }) {
+  try {
+    const supabase = getSupabase();
+    const id = params.id;
+    const { error } = await supabase.from('reels').delete().eq('id', id);
+    if (error) throw error;
+    return new Response(JSON.stringify({ ok: true }), {
       headers: { 'Content-Type': 'application/json' }
     });
   } catch (e) {
