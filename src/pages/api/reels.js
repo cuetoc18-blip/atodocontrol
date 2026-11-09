@@ -1,8 +1,8 @@
 import { createClient } from '@supabase/supabase-js';
 
 const supabase = createClient(
-  process.env.SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY
+  import.meta.env.SUPABASE_URL,
+  import.meta.env.SUPABASE_SERVICE_ROLE_KEY
 );
 
 export async function GET() {
@@ -23,9 +23,9 @@ export async function GET() {
   });
 }
 
-export async function POST(req) {
+export async function POST({ request }) {
   try {
-    const body = await req.json();
+    const body = await request.json();
     const { titulo, url } = body;
 
     if (!titulo || !url) {
@@ -60,8 +60,8 @@ export async function POST(req) {
   }
 }
 
-export async function DELETE(req) {
-  const url = new URL(req.url);
+export async function DELETE({ request }) {
+  const url = new URL(request.url);
   const id = url.pathname.split('/').pop();
 
   const { error } = await supabase
