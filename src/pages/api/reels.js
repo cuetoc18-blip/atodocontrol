@@ -26,7 +26,7 @@ export async function GET() {
 export async function POST({ request }) {
   try {
     const body = await request.json();
-    const { titulo, url } = body;
+    const { titulo, url, imagen_url } = body;
 
     if (!titulo || !url) {
       return new Response(JSON.stringify({ error: 'Faltan título o URL' }), {
@@ -37,7 +37,7 @@ export async function POST({ request }) {
 
     const { data, error } = await supabase
       .from('reels')
-      .insert([{ titulo, url }])
+      .insert([{ titulo, url, imagen_url: imagen_url || null }])
       .select()
       .single();
 
