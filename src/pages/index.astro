@@ -50,7 +50,7 @@ function getEmbedUrl(url) {
     return url.replace(/\/$/, '') + '/embed/';
   }
   if (url.includes('facebook.com')) {
-    return `https://www.facebook.com/plugins/video.php?href=${encodeURIComponent(url)}&show_text=false&width=200`;
+    return `https://www.facebook.com/plugins/video.php?href=${encodeURIComponent(url)}&show_text=false&width=280`;
   }
   return '';
 }
@@ -110,8 +110,6 @@ function getEmbedUrl(url) {
                     <div class="iframe-wrapper">
                       <iframe
                         src={embedUrl}
-                        width="200"
-                        height="320"
                         frameborder="0"
                         scrolling="no"
                         allowtransparency="true"
@@ -210,19 +208,17 @@ function getEmbedUrl(url) {
     }
     .reels-container {
       display: flex;
-      gap: 14px;
+      gap: 16px;
       overflow-x: auto;
       padding-bottom: 10px;
     }
     .reel-card {
-      flex: 0 0 200px;
-      text-decoration: none;
-      color: inherit;
+      flex: 0 0 280px;
     }
     .reel-thumb {
-      width: 200px;
-      height: 320px;
-      border-radius: 14px;
+      width: 280px;
+      height: 460px;
+      border-radius: 16px;
       overflow: hidden;
       background: #0d1b2a;
       position: relative;
@@ -235,12 +231,13 @@ function getEmbedUrl(url) {
     }
     .iframe-wrapper iframe {
       width: 100%;
-      height: 380px;
+      height: 620px;
       border: none;
       display: block;
       position: absolute;
-      top: -50px;
+      top: -80px;
       left: 0;
+      pointer-events: none;
     }
     .reel-thumb img {
       width: 100%;
@@ -257,21 +254,21 @@ function getEmbedUrl(url) {
       text-decoration: none;
     }
     .play {
-      width: 52px;
-      height: 52px;
+      width: 60px;
+      height: 60px;
       background: rgba(255,255,255,0.9);
       color: #0d1b2a;
       border-radius: 50%;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 1.3rem;
+      font-size: 1.5rem;
       font-weight: bold;
     }
     .reel-title {
-      font-size: 0.9rem;
-      font-weight: 600;
-      margin-top: 8px;
+      font-size: 0.95rem;
+      font-weight: 800;
+      margin-top: 10px;
       line-height: 1.3;
       color: #111;
     }
