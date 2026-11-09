@@ -43,6 +43,17 @@ function foto(n) {
   const m = u.match(/\/noticias-imagenes\/(.+)$/);
   return m ? '/media/' + m[1] : u;
 }
+
+function getEmbedUrl(url) {
+  if (!url) return '';
+  if (url.includes('instagram.com/reel/') || url.includes('instagram.com/p/')) {
+    return url.replace(/\/$/, '') + '/embed/';
+  }
+  if (url.includes('facebook.com')) {
+    return `https://www.facebook.com/plugins/video.php?href=${encodeURIComponent(url)}&show_text=false&width=150`;
+  }
+  return '';
+}
 ---
 <Layout title="A Todo Control | Veeduría ciudadana y control político" description="Medio de veeduría ciudadana y control político." url="https://atodocontrol.co/">
   <div class="feed">
@@ -90,20 +101,35 @@ function foto(n) {
         <h2 class="reels-title">Opinión en formato vertical</h2>
         <p class="reels-subtitle">Reels</p>
         <div class="reels-container">
-          {reels.map(reel => (
-            <a href={reel.url} target="_blank" rel="noopener" class="reel-card">
-              <div class="reel-thumb">
-                {reel.imagen_url ? (
-                  <img src={reel.imagen_url} alt={reel.titulo} />
-                ) : (
-                  <div class="reel-placeholder">
-                    <span class="play">▶</span>
-                  </div>
-                )}
+          {reels.map(reel => {
+            const embedUrl = getEmbedUrl(reel.url);
+            return (
+              <div class="reel-card">
+                <div class="reel-thumb">
+                  {embedUrl ? (
+                    <iframe
+                      src={embedUrl}
+                      width="150"
+                      height="240"
+                      frameborder="0"
+                      scrolling="no"
+                      allowtransparency="true"
+                      allow="autoplay; clipboard-write; encrypted-media; picture-in-picture; web-share"
+                    ></iframe>
+                  ) : reel.imagen_url ? (
+                    <a href={reel.url} target="_blank" rel="noopener">
+                      <img src={reel.imagen_url} alt={reel.titulo} />
+                    </a>
+                  ) : (
+                    <a href={reel.url} target="_blank" rel="noopener" class="reel-placeholder">
+                      <span class="play">▶</span>
+                    </a>
+                  )}
+                </div>
+                <div class="reel-title">{reel.titulo}</div>
               </div>
-              <div class="reel-title">{reel.titulo}</div>
-            </a>
-          ))}
+            );
+          })}
         </div>
       </section>
     )}
@@ -199,6 +225,12 @@ function foto(n) {
       background: #0d1b2a;
       position: relative;
     }
+    .reel-thumb iframe {
+      width: 100%;
+      height: 100%;
+      border: none;
+      display: block;
+    }
     .reel-thumb img {
       width: 100%;
       height: 100%;
@@ -211,6 +243,7 @@ function foto(n) {
       display: flex;
       align-items: center;
       justify-content: center;
+      text-decoration: none;
     }
     .play {
       width: 48px;
