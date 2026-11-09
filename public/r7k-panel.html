@@ -80,6 +80,14 @@
     .status-no { background: #fef3c7; color: #92400e; }
     #debug { background: #0f172a; color: #86efac; padding: 12px; border-radius: 8px; font-family: monospace; font-size: 0.8rem; margin-bottom: 16px; white-space: pre-wrap; max-height: 200px; overflow: auto; }
     .reels-card { margin-top: 24px; }
+    .reel-preview {
+      width: 50px;
+      height: 75px;
+      object-fit: cover;
+      border-radius: 6px;
+      background: #0d1b2a;
+      flex-shrink: 0;
+    }
   </style>
 </head>
 <body>
@@ -175,7 +183,7 @@
     <!-- SECCIÓN REELS -->
     <div class="card reels-card">
       <h2>Reels (Opinión vertical)</h2>
-      <p style="font-size:0.85rem;color:#64748b;margin-bottom:12px;">Estos aparecen al final de la página de inicio.</p>
+      <p style="font-size:0.85rem;color:#64748b;margin-bottom:12px;">Estos aparecen al final de la página de inicio. La miniatura es obligatoria para que se vea la foto.</p>
       <form id="reelForm">
         <div class="form-group">
           <label>Título del Reel</label>
@@ -184,6 +192,11 @@
         <div class="form-group">
           <label>Enlace del Reel (Instagram, Facebook o video)</label>
           <input type="url" id="reel_url" placeholder="https://www.instagram.com/reel/..." required>
+        </div>
+        <div class="form-group">
+          <label>URL de la miniatura (foto del Reel)</label>
+          <input type="url" id="reel_imagen" placeholder="https://... (pega aquí la URL de la imagen)">
+          <small style="color:#64748b;font-size:0.8rem;">Sin esta URL no se mostrará la foto en la página de inicio.</small>
         </div>
         <button type="submit" class="btn btn-primary">Agregar Reel</button>
       </form>
@@ -285,10 +298,12 @@
           return;
         }
         reelsList.innerHTML = data.map(r => `
-          <div class="article-item">
-            <div>
+          <div class="article-item" style="align-items:center;">
+            ${r.imagen_url ? `<img src="${r.imagen_url}" class="reel-preview" alt="">` : '<div class="reel-preview"></div>'}
+            <div style="flex:1;">
               <h4>${r.titulo || '(Sin título)'}</h4>
               <div class="meta">${r.url}</div>
+              ${r.imagen_url ? '<div class="meta" style="color:#166534;">✓ Con imagen</div>' : '<div class="meta" style="color:#b91c1c;">Sin imagen</div>'}
             </div>
             <div>
               <button class="btn btn-danger btn-sm" onclick="eliminarReel('${r.id}')">Borrar</button>
@@ -304,17 +319,18 @@
       e.preventDefault();
       const titulo = document.getElementById('reel_titulo').value.trim();
       const url = document.getElementById('reel_url').value.trim();
+      const imagen_url = document.getElementById('reel_imagen').value.trim();
       try {
         await api('/api/reels', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ titulo, url })
+          body: JSON.stringify({ titulo, url, imagen_url: imagen_url || null })
         });
         showOk('Reel agregado');
         document.getElementById('reelForm').reset();
         await cargarReels();
       } catch (err) {
-        showError('Error al agregar reel: ' + err.message + '\n\nPrimero crea la tabla "reels" en Supabase.');
+        showError('Error al agregar reel: ' + err.message);
       }
     });
 
