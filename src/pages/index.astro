@@ -18,6 +18,15 @@ const list = rows || [];
 const featured = list.find(n => n.es_portada) || list[0];
 const rest = list.filter(n => n.id !== featured?.id);
 
+// Traer reels
+let reels = [];
+try {
+  const res = await fetch(new URL('/api/reels', Astro.url.origin));
+  if (res.ok) reels = await res.json();
+} catch (e) {
+  console.error('Error cargando reels', e);
+}
+
 function hace(d) {
   const ms = Date.now() - new Date(d).getTime();
   const m = Math.max(0, Math.floor(ms / 60000));
@@ -76,15 +85,20 @@ function foto(n) {
       ))}
     </div>
 
-    <!-- SECCIÓN DE REELS AL FINAL -->
-    <section class="reels-section">
-      <h2 class="reels-title">Opinión en formato vertical</h2>
-      <p class="reels-subtitle">Reels</p>
-      <div class="reels-container">
-        <!-- Aquí irán los reels cuando se implemente el panel -->
-        <p style="color:#64748b;text-align:center;padding:20px 0;">Próximamente: Reels de opinión</p>
-      </div>
-    </section>
+    {reels.length > 0 && (
+      <section class="reels-section">
+        <h2 class="reels-title">Opinión en formato vertical</h2>
+        <p class="reels-subtitle">Reels</p>
+        <div class="reels-container">
+          {reels.map(reel => (
+            <a href={reel.url} target="_blank" rel="noopener" class="reel-card">
+              <div class="reel-thumb">▶</div>
+              <div class="reel-title">{reel.titulo}</div>
+            </a>
+          ))}
+        </div>
+      </section>
+    )}
   </div>
 
   <style>
@@ -138,7 +152,6 @@ function foto(n) {
     .ph { display: flex; align-items: center; justify-content: center; background: #0d1b2a; color: #fff; font-size: 1.2rem; }
     .empty { color: #64748b; padding: 24px 0; }
 
-    /* Estilos Reels */
     .reels-section {
       margin-top: 40px;
       padding-top: 24px;
@@ -164,6 +177,28 @@ function foto(n) {
       gap: 12px;
       overflow-x: auto;
       padding-bottom: 10px;
+    }
+    .reel-card {
+      flex: 0 0 140px;
+      text-decoration: none;
+      color: inherit;
+    }
+    .reel-thumb {
+      width: 140px;
+      height: 220px;
+      background: #0d1b2a;
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2rem;
+      border-radius: 8px;
+    }
+    .reel-title {
+      font-size: 0.85rem;
+      font-weight: 600;
+      margin-top: 8px;
+      line-height: 1.3;
     }
 
     @media (min-width: 900px) {
