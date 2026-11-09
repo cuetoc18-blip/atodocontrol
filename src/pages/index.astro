@@ -50,7 +50,7 @@ function getEmbedUrl(url) {
     return url.replace(/\/$/, '') + '/embed/';
   }
   if (url.includes('facebook.com')) {
-    return `https://www.facebook.com/plugins/video.php?href=${encodeURIComponent(url)}&show_text=false&width=150`;
+    return `https://www.facebook.com/plugins/video.php?href=${encodeURIComponent(url)}&show_text=false&width=200`;
   }
   return '';
 }
@@ -107,15 +107,17 @@ function getEmbedUrl(url) {
               <div class="reel-card">
                 <div class="reel-thumb">
                   {embedUrl ? (
-                    <iframe
-                      src={embedUrl}
-                      width="150"
-                      height="240"
-                      frameborder="0"
-                      scrolling="no"
-                      allowtransparency="true"
-                      allow="autoplay; clipboard-write; encrypted-media; picture-in-picture; web-share"
-                    ></iframe>
+                    <div class="iframe-wrapper">
+                      <iframe
+                        src={embedUrl}
+                        width="200"
+                        height="320"
+                        frameborder="0"
+                        scrolling="no"
+                        allowtransparency="true"
+                        allow="autoplay; clipboard-write; encrypted-media; picture-in-picture; web-share"
+                      ></iframe>
+                    </div>
                   ) : reel.imagen_url ? (
                     <a href={reel.url} target="_blank" rel="noopener">
                       <img src={reel.imagen_url} alt={reel.titulo} />
@@ -208,28 +210,37 @@ function getEmbedUrl(url) {
     }
     .reels-container {
       display: flex;
-      gap: 12px;
+      gap: 14px;
       overflow-x: auto;
       padding-bottom: 10px;
     }
     .reel-card {
-      flex: 0 0 150px;
+      flex: 0 0 200px;
       text-decoration: none;
       color: inherit;
     }
     .reel-thumb {
-      width: 150px;
-      height: 240px;
-      border-radius: 12px;
+      width: 200px;
+      height: 320px;
+      border-radius: 14px;
       overflow: hidden;
       background: #0d1b2a;
       position: relative;
     }
-    .reel-thumb iframe {
+    .iframe-wrapper {
       width: 100%;
       height: 100%;
+      overflow: hidden;
+      position: relative;
+    }
+    .iframe-wrapper iframe {
+      width: 100%;
+      height: 380px;
       border: none;
       display: block;
+      position: absolute;
+      top: -50px;
+      left: 0;
     }
     .reel-thumb img {
       width: 100%;
@@ -246,19 +257,19 @@ function getEmbedUrl(url) {
       text-decoration: none;
     }
     .play {
-      width: 48px;
-      height: 48px;
+      width: 52px;
+      height: 52px;
       background: rgba(255,255,255,0.9);
       color: #0d1b2a;
       border-radius: 50%;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 1.2rem;
+      font-size: 1.3rem;
       font-weight: bold;
     }
     .reel-title {
-      font-size: 0.85rem;
+      font-size: 0.9rem;
       font-weight: 600;
       margin-top: 8px;
       line-height: 1.3;
