@@ -50,6 +50,9 @@ const {
         <a href="/?cat=Seguridad">Seguridad</a>
         <a href="/?cat=Comunidad">Comunidad</a>
         <a href="/?cat=Opinión">Opinión</a>
+        <a href="/?cat=Medio%20Ambiente">Medio Ambiente</a>
+        <a href="/?cat=Tecnología">Tecnología</a>
+        <a href="/?cat=Judicial">Judicial</a>
       </nav>
     </header>
     <slot />
@@ -73,7 +76,6 @@ const {
           }
           const data = await res.json();
           const nombre = data.nombre || 'Usuario';
-          // Hombre = adventurer, Mujer = lorelei
           const estilo = data.genero === 'f' ? 'lorelei' : 'adventurer';
           const avatar = `https://api.dicebear.com/7.x/${estilo}/svg?seed=${encodeURIComponent(nombre)}&backgroundColor=b6e3f4,c0aede,d1d4f9`;
           area.innerHTML = `
