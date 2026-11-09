@@ -22,7 +22,7 @@
       border-radius: 0;
       padding: 0;
     }
-        .wordmark {
+    .wordmark {
       display: flex;
       align-items: baseline;
       gap: 8px;
@@ -79,6 +79,7 @@
     .status-ok { background: #dcfce7; color: #166534; }
     .status-no { background: #fef3c7; color: #92400e; }
     #debug { background: #0f172a; color: #86efac; padding: 12px; border-radius: 8px; font-family: monospace; font-size: 0.8rem; margin-bottom: 16px; white-space: pre-wrap; max-height: 200px; overflow: auto; }
+    .reels-card { margin-top: 24px; }
   </style>
 </head>
 <body>
@@ -124,6 +125,9 @@
               <option value="Comunidad">Comunidad</option>
               <option value="Opinión">Opinión</option>
               <option value="Internacional">Internacional</option>
+              <option value="Medio Ambiente">Medio Ambiente</option>
+              <option value="Tecnología">Tecnología</option>
+              <option value="Judicial">Judicial</option>
             </select>
           </div>
           <div class="form-group">
@@ -167,6 +171,24 @@
         <div id="articleList">Cargando...</div>
       </div>
     </div>
+
+    <!-- SECCIÓN REELS -->
+    <div class="card reels-card">
+      <h2>Reels (Opinión vertical)</h2>
+      <p style="font-size:0.85rem;color:#64748b;margin-bottom:12px;">Estos aparecen al final de la página de inicio.</p>
+      <form id="reelForm">
+        <div class="form-group">
+          <label>Título del Reel</label>
+          <input type="text" id="reel_titulo" placeholder="Ej: Timochenko cuesta una fortuna" required>
+        </div>
+        <div class="form-group">
+          <label>Enlace del Reel (Instagram, Facebook o video)</label>
+          <input type="url" id="reel_url" placeholder="https://www.instagram.com/reel/..." required>
+        </div>
+        <button type="submit" class="btn btn-primary">Agregar Reel</button>
+      </form>
+      <div id="reelsList" style="margin-top:16px;">Cargando reels...</div>
+    </div>
   </div>
 
   <script>
@@ -177,13 +199,14 @@
         location.replace('https://atodocontrol.co/');
       }
     })();
-</script>
+  </script>
   <script>
     const API = '';
     const debug = document.getElementById('debug');
     const errorBox = document.getElementById('errorBox');
     const okBox = document.getElementById('okBox');
     const list = document.getElementById('articleList');
+    const reelsList = document.getElementById('reelsList');
 
     function log(msg) {
       debug.textContent += '\n' + msg;
@@ -216,6 +239,7 @@
         const sesion = await api('/api/auth/me');
         document.getElementById('userEmail').textContent = sesion.user.email;
         await cargarLista();
+        await cargarReels();
         setInterval(cargarLista, 20000);
       } catch (e) {
         window.location.href = 'r7k-acceso.html';
@@ -251,6 +275,59 @@
         showError(e.message);
       }
     }
+
+    async function cargarReels() {
+      reelsList.innerHTML = 'Cargando...';
+      try {
+        const data = await api('/api/reels');
+        if (!data.length) {
+          reelsList.innerHTML = '<span style="color:#64748b">No hay reels todavía.</span>';
+          return;
+        }
+        reelsList.innerHTML = data.map(r => `
+          <div class="article-item">
+            <div>
+              <h4>${r.titulo || '(Sin título)'}</h4>
+              <div class="meta">${r.url}</div>
+            </div>
+            <div>
+              <button class="btn btn-danger btn-sm" onclick="eliminarReel('${r.id}')">Borrar</button>
+            </div>
+          </div>
+        `).join('');
+      } catch (e) {
+        reelsList.innerHTML = '<span style="color:#64748b">Tabla de reels aún no creada en Supabase.</span>';
+      }
+    }
+
+    document.getElementById('reelForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const titulo = document.getElementById('reel_titulo').value.trim();
+      const url = document.getElementById('reel_url').value.trim();
+      try {
+        await api('/api/reels', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ titulo, url })
+        });
+        showOk('Reel agregado');
+        document.getElementById('reelForm').reset();
+        await cargarReels();
+      } catch (err) {
+        showError('Error al agregar reel: ' + err.message + '\n\nPrimero crea la tabla "reels" en Supabase.');
+      }
+    });
+
+    window.eliminarReel = async function(id) {
+      if (!confirm('¿Eliminar este Reel?')) return;
+      try {
+        await api('/api/reels/' + id, { method: 'DELETE' });
+        showOk('Reel eliminado');
+        await cargarReels();
+      } catch (e) {
+        showError(e.message);
+      }
+    };
 
     document.getElementById('articleForm').addEventListener('submit', async (e) => {
       e.preventDefault();
