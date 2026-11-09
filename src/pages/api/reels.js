@@ -3,10 +3,12 @@ import { createClient } from '@supabase/supabase-js';
 export const prerender = false;
 
 function getSupabase() {
-  return createClient(
-    process.env.SUPABASE_URL,
-    process.env.SUPABASE_SERVICE_ROLE_KEY
-  );
+  const url = process.env.SUPABASE_URL;
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!url || !key) {
+    throw new Error('Faltan variables de entorno SUPABASE_URL o SUPABASE_SERVICE_ROLE_KEY');
+  }
+  return createClient(url, key);
 }
 
 export async function GET() {
@@ -17,14 +19,14 @@ export async function GET() {
       .select('*')
       .order('created_at', { ascending: false });
 
-    if (error) throw error;
+    if (error) {
+      return new Response(JSON.stringify({ error: 'Tabla reels: ' + error.message }), { status: 500 });
+    }
     return new Response(JSON.stringify(data || []), {
       headers: { 'Content-Type': 'application/json' }
     });
   } catch (e) {
-    return new Response(JSON.stringify([]), {
-      headers: { 'Content-Type': 'application/json' }
-    });
+    return new Response(JSON.stringify({ error: e.message }), { status: 500 });
   }
 }
 
@@ -35,8 +37,11 @@ export async function POST({ request }) {
     const titulo = String(form.get('titulo') || '').trim();
     const file = form.get('video');
 
-    if (!titulo || !file || !file.name) {
-      return new Response(JSON.stringify({ error: 'Faltan título o video' }), { status: 400 });
+    if (!titulo) {
+      return new Response(JSON.stringify({ error: 'Falta el título' }), { status: 400 });
+    }
+    if (!file || !file.name) {
+      return new Response(JSON.stringify({ error: 'No llegó el archivo de video' }), { status: 400 });
     }
 
     const ext = (file.name.split('.').pop() || 'mp4').toLowerCase();
@@ -50,7 +55,6 @@ export async function POST({ request }) {
       return new Response(JSON.stringify({ error: 'Storage: ' + upErr.message }), { status: 500 });
     }
 
-    // Guardamos solo el path. La URL pública pasa por nuestro servidor.
     const { data, error } = await supabase
       .from('reels')
       .insert({ titulo, video_path: path })
@@ -58,13 +62,13 @@ export async function POST({ request }) {
       .single();
 
     if (error) {
-      return new Response(JSON.stringify({ error: 'Tabla: ' + error.message }), { status: 500 });
+      return new Response(JSON.stringify({ error: 'Insert: ' + error.message }), { status: 500 });
     }
 
     return new Response(JSON.stringify(data), {
       headers: { 'Content-Type': 'application/json' }
     });
   } catch (e) {
-    return new Response(JSON.stringify({ error: e.message }), { status: 500 });
+    return new Response(JSON.stringify({ error: 'Excepción: ' + e.message }), { status: 500 });
   }
 }
