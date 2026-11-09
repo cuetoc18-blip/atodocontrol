@@ -91,37 +91,23 @@ function foto(n) {
         <p class="reels-subtitle">Reels</p>
         <div class="reels-container">
           {reels.map(reel => (
-            <div class="reel-card">
-              <div class="reel-embed">
-                {reel.url.includes('instagram.com') ? (
-                  <iframe src={reel.url.replace('/reel/', '/embed/reel/').replace('/p/', '/embed/p/')} 
-                          width="150" height="240" frameborder="0" scrolling="no" allowtransparency="true"></iframe>
-                ) : reel.url.includes('facebook.com') || reel.url.includes('fb.watch') ? (
-                  <iframe src={`https://www.facebook.com/plugins/video.php?href=${encodeURIComponent(reel.url)}&show_text=false&width=150`} 
-                          width="150" height="240" style="border:none;overflow:hidden" scrolling="no" frameborder="0" allowfullscreen="true"></iframe>
-                ) : reel.url.includes('x.com') || reel.url.includes('twitter.com') ? (
-                  <blockquote class="twitter-tweet" data-width="150">
-                    <a href={reel.url}></a>
-                  </blockquote>
+            <a href={reel.url} target="_blank" rel="noopener" class="reel-card">
+              <div class="reel-thumb">
+                {reel.imagen_url ? (
+                  <img src={reel.imagen_url} alt={reel.titulo} />
                 ) : (
-                  <a href={reel.url} target="_blank" rel="noopener" class="reel-fallback">
-                    {reel.imagen_url ? (
-                      <img src={reel.imagen_url} alt={reel.titulo} />
-                    ) : (
-                      <span class="play">▶</span>
-                    )}
-                  </a>
+                  <div class="reel-placeholder">
+                    <span class="play">▶</span>
+                  </div>
                 )}
               </div>
               <div class="reel-title">{reel.titulo}</div>
-            </div>
+            </a>
           ))}
         </div>
       </section>
     )}
   </div>
-
-  <script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
 
   <style>
     .feed { background: #fff; max-width: 1100px; margin: 0 auto; padding: 20px 24px 40px; }
@@ -201,33 +187,30 @@ function foto(n) {
       padding-bottom: 10px;
     }
     .reel-card {
-      flex: 0 0 160px;
-      text-align: center;
+      flex: 0 0 150px;
+      text-decoration: none;
+      color: inherit;
     }
-    .reel-embed {
-      width: 160px;
-      height: 250px;
+    .reel-thumb {
+      width: 150px;
+      height: 240px;
       border-radius: 12px;
       overflow: hidden;
       background: #0d1b2a;
+      position: relative;
     }
-    .reel-embed iframe {
-      width: 100%;
-      height: 100%;
-      border: none;
-    }
-    .reel-fallback {
-      display: flex;
-      width: 100%;
-      height: 100%;
-      align-items: center;
-      justify-content: center;
-      text-decoration: none;
-    }
-    .reel-fallback img {
+    .reel-thumb img {
       width: 100%;
       height: 100%;
       object-fit: cover;
+      display: block;
+    }
+    .reel-placeholder {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
     .play {
       width: 48px;
