@@ -75,6 +75,16 @@ function foto(n) {
         </a>
       ))}
     </div>
+
+    <!-- SECCIÓN DE REELS AL FINAL -->
+    <section class="reels-section">
+      <h2 class="reels-title">Opinión en formato vertical</h2>
+      <p class="reels-subtitle">Reels</p>
+      <div class="reels-container">
+        <!-- Aquí irán los reels cuando se implemente el panel -->
+        <p style="color:#64748b;text-align:center;padding:20px 0;">Próximamente: Reels de opinión</p>
+      </div>
+    </section>
   </div>
 
   <style>
@@ -127,6 +137,35 @@ function foto(n) {
     }
     .ph { display: flex; align-items: center; justify-content: center; background: #0d1b2a; color: #fff; font-size: 1.2rem; }
     .empty { color: #64748b; padding: 24px 0; }
+
+    /* Estilos Reels */
+    .reels-section {
+      margin-top: 40px;
+      padding-top: 24px;
+      border-top: 1px solid #e5e7eb;
+    }
+    .reels-title {
+      font-size: 0.9rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: #64748b;
+      margin: 0 0 4px;
+    }
+    .reels-subtitle {
+      font-family: Georgia, serif;
+      font-size: 1.8rem;
+      font-weight: 800;
+      margin: 0 0 16px;
+      color: #111;
+    }
+    .reels-container {
+      display: flex;
+      gap: 12px;
+      overflow-x: auto;
+      padding-bottom: 10px;
+    }
+
     @media (min-width: 900px) {
       .hero { display: grid; grid-template-columns: 1.1fr .9fr; gap: 28px; align-items: center; }
       .hero h1 { font-size: 2.35rem; margin-bottom: 12px; }
