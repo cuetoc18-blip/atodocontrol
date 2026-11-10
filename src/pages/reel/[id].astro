@@ -28,6 +28,16 @@ const { id } = Astro.params;
   <script define:vars={{ id }}>
     let reels = [];
     let idx = 0;
+    const preloaded = {};
+
+    function preload(i) {
+      if (i < 0 || i >= reels.length || preloaded[i]) return;
+      const v = document.createElement('video');
+      v.preload = 'auto';
+      v.src = reels[i].video_url;
+      v.load();
+      preloaded[i] = v;
+    }
 
     async function cargar() {
       const res = await fetch('/api/reels');
@@ -35,6 +45,8 @@ const { id } = Astro.params;
       idx = reels.findIndex(x => x.id === id);
       if (idx < 0) idx = 0;
       mostrar(idx);
+      preload(idx + 1);
+      preload(idx - 1);
     }
 
     function mostrar(i) {
@@ -49,6 +61,9 @@ const { id } = Astro.params;
 
       document.getElementById('reel-titulo').textContent = r.titulo || '';
       document.getElementById('reel-desc').textContent = r.descripcion || '';
+
+      preload(idx + 1);
+      preload(idx - 1);
     }
 
     document.getElementById('reel-like').onclick = (e) => {
@@ -68,13 +83,19 @@ const { id } = Astro.params;
     };
 
     let startY = 0;
-    document.getElementById('reel-page').addEventListener('touchstart', e => { startY = e.touches[0].clientY; }, {passive:true});
-    document.getElementById('reel-page').addEventListener('touchend', e => {
+    const page = document.getElementById('reel-page');
+    page.addEventListener('touchstart', e => { startY = e.touches[0].clientY; }, {passive:true});
+    page.addEventListener('touchend', e => {
       const dy = e.changedTouches[0].clientY - startY;
-      if (Math.abs(dy) > 50) {
+      if (Math.abs(dy) > 40) {
         if (dy < 0) mostrar(idx + 1);
         else mostrar(idx - 1);
       }
+    }, {passive:true});
+
+    page.addEventListener('wheel', e => {
+      if (e.deltaY > 30) mostrar(idx + 1);
+      else if (e.deltaY < -30) mostrar(idx - 1);
     }, {passive:true});
 
     cargar();
@@ -92,15 +113,16 @@ const { id } = Astro.params;
     .reel-box {
       position: relative;
       height: 100%;
-      max-width: 420px;
+      max-width: 360px;
       width: 100%;
     }
     @media (min-width: 700px) {
       .reel-box {
+        height: 90vh;
+        max-height: 90vh;
         width: auto;
-        height: 100vh;
         aspect-ratio: 9/16;
-        max-width: none;
+        max-width: 400px;
       }
     }
     #reel-video {
@@ -110,7 +132,7 @@ const { id } = Astro.params;
     }
     .reel-info {
       position: absolute;
-      bottom: 90px;
+      bottom: 80px;
       left: 12px;
       display: flex;
       align-items: center;
@@ -118,12 +140,12 @@ const { id } = Astro.params;
       color: #fff;
     }
     .reel-logo {
-      width: 32px;
-      height: 32px;
+      width: 42px;
+      height: 42px;
       border-radius: 50%;
       object-fit: cover;
-      background: #fff;
-      border: 2px solid #fff;
+      background: transparent;
+      border: none;
     }
     .reel-nombre {
       font-weight: 700;
@@ -132,7 +154,7 @@ const { id } = Astro.params;
     }
     .reel-texto {
       position: absolute;
-      bottom: 16px;
+      bottom: 12px;
       left: 12px;
       right: 50px;
       color: #fff;
@@ -143,7 +165,7 @@ const { id } = Astro.params;
     .reel-acciones {
       position: absolute;
       right: 8px;
-      bottom: 110px;
+      bottom: 100px;
       display: flex;
       flex-direction: column;
       gap: 16px;
@@ -163,13 +185,14 @@ const { id } = Astro.params;
       background: rgba(0,0,0,.5);
       color: #fff;
       border-radius: 50%;
-      width: 32px;
-      height: 32px;
+      width: 36px;
+      height: 36px;
       display: flex;
       align-items: center;
       justify-content: center;
       text-decoration: none;
-      font-size: 16px;
+      font-size: 18px;
+      z-index: 10;
     }
   </style>
 </Layout>
