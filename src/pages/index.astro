@@ -103,15 +103,29 @@ function foto(n) {
           const videoUrl = reel.video_url || '';
           if (!videoUrl) continue;
           html += `
-            <div class="reel-item">
-              <video class="reel-video" src="${videoUrl}" controls playsinline preload="auto" muted></video>
+            <div class="reel-item" data-src="${videoUrl}">
+              <div class="reel-thumb" style="width:100px;height:178px;background:#111;border-radius:8px;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden;">
+                <video src="${videoUrl}" muted playsinline preload="metadata" style="width:100%;height:100%;object-fit:cover;position:absolute;top:0;left:0;"></video>
+                <div style="position:absolute;width:36px;height:36px;background:rgba(0,0,0,.6);border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-size:14px;">▶</div>
+              </div>
               <p class="reel-title">${reel.titulo || ''}</p>
             </div>
           `;
         }
         contenedor.innerHTML = html;
-        contenedor.querySelectorAll('video').forEach(v => {
-          v.addEventListener('loadedmetadata', () => { try { v.currentTime = 0.5; } catch(e){} });
+        contenedor.querySelectorAll('.reel-item').forEach(item => {
+          const v = item.querySelector('video');
+          if (v) {
+            v.addEventListener('loadedmetadata', () => { try { v.currentTime = 0.1; } catch(e){} });
+          }
+          item.addEventListener('click', () => {
+            const src = item.dataset.src;
+            const modal = document.createElement('div');
+            modal.style.cssText = 'position:fixed;inset:0;background:#000;z-index:9999;display:flex;align-items:center;justify-content:center;';
+            modal.innerHTML = `<video src="${src}" controls autoplay playsinline style="max-width:100%;max-height:100%;"></video><button style="position:absolute;top:20px;right:20px;background:#fff;border:none;border-radius:50%;width:40px;height:40px;font-size:20px;">✕</button>`;
+            modal.querySelector('button').onclick = () => modal.remove();
+            document.body.appendChild(modal);
+          });
         });
       } catch (e) {
         contenedor.innerHTML = '<p style="color:#64748b;text-align:center;padding:20px 0;">Error cargando reels</p>';
@@ -194,27 +208,30 @@ function foto(n) {
     }
     .reels-container {
       display: flex;
-      gap: 12px;
+      gap: 10px;
       overflow-x: auto;
       padding: 8px 0 16px;
       -webkit-overflow-scrolling: touch;
       scroll-snap-type: x mandatory;
     }
     .reel-item {
-      flex: 0 0 110px !important;
-      width: 110px !important;
-      min-width: 110px !important;
-      max-width: 110px !important;
+      flex: 0 0 100px !important;
+      width: 100px !important;
+      min-width: 100px !important;
+      max-width: 100px !important;
       scroll-snap-align: start;
+      overflow: hidden;
     }
     .reel-item video,
     .reel-video {
-      width: 110px !important;
-      height: 196px !important;
-      max-width: 110px !important;
-      max-height: 196px !important;
+      width: 100px !important;
+      height: 178px !important;
+      max-width: 100px !important;
+      max-height: 178px !important;
+      min-width: 100px !important;
+      min-height: 178px !important;
       object-fit: cover !important;
-      border-radius: 10px;
+      border-radius: 8px;
       background: #111;
       display: block;
     }
