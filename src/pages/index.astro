@@ -103,7 +103,7 @@ function foto(n) {
           const videoUrl = reel.video_url || '';
           if (!videoUrl) continue;
           html += `
-            <div class="reel-item" data-src="${videoUrl}">
+            <div class="reel-item" data-src="${videoUrl}" data-titulo="${(reel.titulo||'').replace(/"/g,'"')}" data-desc="${(reel.descripcion||'').replace(/"/g,'"')}">
               <div class="reel-thumb">
                 <video src="${videoUrl}" muted playsinline preload="metadata"></video>
                 <div class="reel-play">▶</div>
@@ -119,18 +119,64 @@ function foto(n) {
             v.addEventListener('loadedmetadata', () => { try { v.currentTime = 0.1; } catch(e){} });
           }
           item.addEventListener('click', () => {
-            const src = item.dataset.src;
-            const modal = document.createElement('div');
-            modal.style.cssText = 'position:fixed;inset:0;background:#000;z-index:9999;display:flex;align-items:center;justify-content:center;';
-            modal.innerHTML = `<video src="${src}" controls autoplay playsinline style="max-width:100%;max-height:100%;"></video><button style="position:absolute;top:20px;right:20px;background:#fff;border:none;border-radius:50%;width:40px;height:40px;font-size:20px;">✕</button>`;
-            modal.querySelector('button').onclick = () => modal.remove();
-            document.body.appendChild(modal);
+            abrirReels(reels, item.dataset.src);
           });
         });
       } catch (e) {
         contenedor.innerHTML = '<p style="color:#64748b;text-align:center;padding:20px 0;">Error cargando reels</p>';
       }
     }
+
+    function abrirReels(lista, srcInicial) {
+      let idx = lista.findIndex(r => r.video_url === srcInicial);
+      if (idx < 0) idx = 0;
+
+      const overlay = document.createElement('div');
+      overlay.id = 'reel-overlay';
+      overlay.innerHTML = `
+        <div class="reel-visor">
+          <video id="reel-video" playsinline loop autoplay></video>
+          <div class="reel-texto">
+            <div class="reel-titulo" id="reel-titulo"></div>
+            <div class="reel-desc" id="reel-desc"></div>
+          </div>
+          <button class="reel-cerrar">✕</button>
+          <div class="reel-flechas">
+            <button class="reel-prev">‹</button>
+            <button class="reel-next">›</button>
+          </div>
+        </div>
+      `;
+      document.body.appendChild(overlay);
+
+      const video = overlay.querySelector('#reel-video');
+      const tituloEl = overlay.querySelector('#reel-titulo');
+      const descEl = overlay.querySelector('#reel-desc');
+
+      function mostrar(i) {
+        if (i < 0 || i >= lista.length) return;
+        idx = i;
+        const r = lista[idx];
+        video.src = r.video_url;
+        video.play().catch(()=>{});
+        tituloEl.textContent = r.titulo || '';
+        descEl.textContent = r.descripcion || '';
+      }
+      mostrar(idx);
+
+      overlay.querySelector('.reel-cerrar').onclick = () => overlay.remove();
+      overlay.querySelector('.reel-next').onclick = () => mostrar(idx + 1);
+      overlay.querySelector('.reel-prev').onclick = () => mostrar(idx - 1);
+
+      let startX = 0;
+      overlay.addEventListener('touchstart', e => { startX = e.touches[0].clientX; }, {passive:true});
+      overlay.addEventListener('touchend', e => {
+        const dx = e.changedTouches[0].clientX - startX;
+        if (dx < -50) mostrar(idx + 1);
+        if (dx > 50) mostrar(idx - 1);
+      }, {passive:true});
+    }
+
     cargarReels();
   </script>
 
@@ -213,6 +259,81 @@ function foto(n) {
       padding: 8px 0 16px;
       -webkit-overflow-scrolling: touch;
       scroll-snap-type: x mandatory;
+    }
+    :global(#reel-overlay) {
+      position: fixed;
+      inset: 0;
+      background: #000;
+      z-index: 9999;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    :global(.reel-visor) {
+      position: relative;
+      width: 100%;
+      max-width: 420px;
+      height: 100%;
+      max-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    :global(#reel-video) {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    :global(.reel-texto) {
+      position: absolute;
+      bottom: 80px;
+      left: 16px;
+      right: 60px;
+      color: #fff;
+      text-shadow: 0 1px 4px rgba(0,0,0,.6);
+    }
+    :global(.reel-titulo) {
+      font-size: 1.1rem;
+      font-weight: 700;
+      margin-bottom: 6px;
+      line-height: 1.3;
+    }
+    :global(.reel-desc) {
+      font-size: .9rem;
+      opacity: .9;
+      line-height: 1.4;
+    }
+    :global(.reel-cerrar) {
+      position: absolute;
+      top: 16px;
+      right: 16px;
+      background: rgba(0,0,0,.5);
+      color: #fff;
+      border: none;
+      border-radius: 50%;
+      width: 36px;
+      height: 36px;
+      font-size: 18px;
+      cursor: pointer;
+    }
+    :global(.reel-flechas) {
+      position: absolute;
+      right: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    :global(.reel-prev), :global(.reel-next) {
+      background: rgba(0,0,0,.4);
+      color: #fff;
+      border: none;
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      font-size: 24px;
+      cursor: pointer;
     }
     :global(.reel-item) {
       flex: 0 0 140px !important;
