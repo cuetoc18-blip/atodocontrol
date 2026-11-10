@@ -136,7 +136,7 @@ function foto(n) {
       overlay.id = 'reel-overlay';
       overlay.innerHTML = `
         <div class="reel-visor">
-          <video id="reel-video" playsinline loop autoplay></video>
+          <video id="reel-video" playsinline loop autoplay preload="auto"></video>
           <div class="reel-info">
             <img src="/logo.png" alt="A Todo Control" class="reel-logo" />
             <div class="reel-nombre">A Todo Control</div>
@@ -193,7 +193,7 @@ function foto(n) {
 
       overlay.querySelector('#reel-share').onclick = () => {
         const r = lista[idx];
-        const url = window.location.origin + '/?reel=' + (r.id || idx);
+        const url = window.location.origin + '/reel/' + (r.id || idx);
         if (navigator.share) {
           navigator.share({ title: r.titulo || 'Reel', url }).catch(()=>{});
         } else {
@@ -332,47 +332,52 @@ function foto(n) {
     :global(.reel-info) {
       position: absolute;
       bottom: 90px;
-      left: 16px;
+      left: 12px;
       display: flex;
       align-items: center;
       gap: 8px;
       color: #fff;
+      z-index: 2;
     }
     :global(.reel-logo) {
-      width: 36px;
-      height: 36px;
+      width: 32px;
+      height: 32px;
       border-radius: 50%;
       object-fit: cover;
       background: #fff;
+      border: 2px solid #fff;
     }
     :global(.reel-nombre) {
       font-weight: 700;
-      font-size: .95rem;
+      font-size: .9rem;
       text-shadow: 0 1px 3px rgba(0,0,0,.6);
     }
     :global(.reel-acciones) {
       position: absolute;
-      right: 12px;
-      bottom: 100px;
+      right: 8px;
+      bottom: 120px;
       display: flex;
       flex-direction: column;
-      gap: 16px;
+      gap: 18px;
+      z-index: 2;
     }
     :global(.reel-like), :global(.reel-share) {
       background: none;
       border: none;
       color: #fff;
-      font-size: 28px;
+      font-size: 26px;
       cursor: pointer;
       text-shadow: 0 1px 4px rgba(0,0,0,.5);
+      padding: 0;
     }
     :global(.reel-texto) {
       position: absolute;
-      bottom: 20px;
-      left: 16px;
-      right: 16px;
+      bottom: 16px;
+      left: 12px;
+      right: 60px;
       color: #fff;
       text-shadow: 0 1px 3px rgba(0,0,0,.7);
+      z-index: 2;
     }
     :global(.reel-titulo) {
       font-size: 1rem;
