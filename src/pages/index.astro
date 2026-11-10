@@ -104,9 +104,9 @@ function foto(n) {
           if (!videoUrl) continue;
           html += `
             <div class="reel-item" data-src="${videoUrl}">
-              <div class="reel-thumb" style="width:100px;height:178px;background:#111;border-radius:8px;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden;">
-                <video src="${videoUrl}" muted playsinline preload="metadata" style="width:100%;height:100%;object-fit:cover;position:absolute;top:0;left:0;"></video>
-                <div style="position:absolute;width:36px;height:36px;background:rgba(0,0,0,.6);border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-size:14px;">▶</div>
+              <div class="reel-thumb">
+                <video src="${videoUrl}" muted playsinline preload="metadata"></video>
+                <div class="reel-play">▶</div>
               </div>
               <p class="reel-title">${reel.titulo || ''}</p>
             </div>
@@ -220,20 +220,37 @@ function foto(n) {
       min-width: 140px !important;
       max-width: 140px !important;
       scroll-snap-align: start;
+    }
+    .reel-thumb {
+      width: 140px;
+      height: 249px;
+      background: #111;
+      border-radius: 12px;
+      position: relative;
       overflow: hidden;
     }
-    .reel-item video,
-    .reel-video {
-      width: 140px !important;
-      height: 249px !important;
-      max-width: 140px !important;
-      max-height: 249px !important;
-      min-width: 140px !important;
-      min-height: 249px !important;
-      object-fit: cover !important;
-      border-radius: 12px;
-      background: #111;
-      display: block;
+    .reel-thumb video {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      position: absolute;
+      top: 0;
+      left: 0;
+    }
+    .reel-play {
+      position: absolute;
+      width: 40px;
+      height: 40px;
+      background: rgba(0,0,0,.6);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      font-size: 16px;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
     }
     .reel-title {
       margin: 10px 0 0;
