@@ -136,10 +136,18 @@ function foto(n) {
       overlay.innerHTML = `
         <div class="reel-visor">
           <video id="reel-video" playsinline loop autoplay></video>
+          <div class="reel-info">
+            <img src="/logo.png" alt="A Todo Control" class="reel-logo" />
+            <div class="reel-nombre">A Todo Control</div>
+          </div>
           <div class="reel-texto">
             <div class="reel-titulo" id="reel-titulo"></div>
             <div class="reel-desc" id="reel-desc"></div>
             <span class="reel-vermas" id="reel-vermas" style="display:none;">Ver más</span>
+          </div>
+          <div class="reel-acciones">
+            <button class="reel-like" id="reel-like">♡</button>
+            <button class="reel-share" id="reel-share">↗</button>
           </div>
           <button class="reel-cerrar">✕</button>
         </div>
@@ -176,22 +184,38 @@ function foto(n) {
 
       overlay.querySelector('.reel-cerrar').onclick = () => overlay.remove();
 
-      let startX = 0;
-      overlay.addEventListener('touchstart', e => { startX = e.touches[0].clientX; }, {passive: true});
+      const likeBtn = overlay.querySelector('#reel-like');
+      likeBtn.onclick = () => {
+        likeBtn.textContent = likeBtn.textContent === '♡' ? '♥' : '♡';
+        likeBtn.style.color = likeBtn.textContent === '♥' ? '#ff2d55' : '#fff';
+      };
+
+      overlay.querySelector('#reel-share').onclick = () => {
+        const r = lista[idx];
+        const url = window.location.origin + '/?reel=' + (r.id || idx);
+        if (navigator.share) {
+          navigator.share({ title: r.titulo || 'Reel', url }).catch(()=>{});
+        } else {
+          navigator.clipboard.writeText(url);
+          alert('Enlace copiado');
+        }
+      };
+
+      let startY = 0;
+      overlay.addEventListener('touchstart', e => { startY = e.touches[0].clientY; }, {passive: true});
       overlay.addEventListener('touchend', e => {
-        const dx = e.changedTouches[0].clientX - startX;
-        if (Math.abs(dx) > 40) {
-          if (dx < 0) mostrar(idx + 1);
+        const dy = e.changedTouches[0].clientY - startY;
+        if (Math.abs(dy) > 40) {
+          if (dy < 0) mostrar(idx + 1);
           else mostrar(idx - 1);
         }
       }, {passive: true});
 
-      // También con mouse para pruebas en escritorio
-      overlay.addEventListener('mousedown', e => { startX = e.clientX; });
+      overlay.addEventListener('mousedown', e => { startY = e.clientY; });
       overlay.addEventListener('mouseup', e => {
-        const dx = e.clientX - startX;
-        if (Math.abs(dx) > 40) {
-          if (dx < 0) mostrar(idx + 1);
+        const dy = e.clientY - startY;
+        if (Math.abs(dy) > 40) {
+          if (dy < 0) mostrar(idx + 1);
           else mostrar(idx - 1);
         }
       });
@@ -303,6 +327,43 @@ function foto(n) {
       width: 100%;
       height: 100%;
       object-fit: cover;
+    }
+    :global(.reel-info) {
+      position: absolute;
+      bottom: 90px;
+      left: 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: #fff;
+    }
+    :global(.reel-logo) {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      object-fit: cover;
+      background: #fff;
+    }
+    :global(.reel-nombre) {
+      font-weight: 700;
+      font-size: .95rem;
+      text-shadow: 0 1px 3px rgba(0,0,0,.6);
+    }
+    :global(.reel-acciones) {
+      position: absolute;
+      right: 12px;
+      bottom: 100px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    :global(.reel-like), :global(.reel-share) {
+      background: none;
+      border: none;
+      color: #fff;
+      font-size: 28px;
+      cursor: pointer;
+      text-shadow: 0 1px 4px rgba(0,0,0,.5);
     }
     :global(.reel-texto) {
       position: absolute;
