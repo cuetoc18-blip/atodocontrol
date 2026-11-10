@@ -169,7 +169,7 @@ function foto(n) {
     .ph { display: flex; align-items: center; justify-content: center; background: #0d1b2a; color: #fff; font-size: 1.2rem; }
     .empty { color: #64748b; padding: 24px 0; }
 
-    /* Estilos Reels */
+    /* Estilos Reels - formato vertical tipo iPhone */
     .reels-section {
       margin-top: 40px;
       padding-top: 24px;
@@ -192,30 +192,29 @@ function foto(n) {
     }
     .reels-container {
       display: flex;
-      gap: 10px;
+      gap: 12px;
       overflow-x: auto;
-      padding: 4px 0 10px;
+      padding: 8px 0 16px;
       -webkit-overflow-scrolling: touch;
+      scroll-snap-type: x mandatory;
     }
     .reel-item {
-      flex: 0 0 90px;
-      width: 90px;
-      min-width: 90px;
-      max-width: 90px;
+      flex: 0 0 200px;
+      width: 200px;
+      min-width: 200px;
+      scroll-snap-align: start;
     }
     .reel-item video {
-      width: 90px !important;
-      height: 160px !important;
-      max-width: 90px !important;
-      max-height: 160px !important;
+      width: 200px;
+      height: 356px;
       object-fit: cover;
-      border-radius: 8px;
-      background: #111;
+      border-radius: 16px;
+      background: #000;
       display: block;
     }
     .reel-title {
-      margin: 8px 0 0;
-      font-size: 0.85rem;
+      margin: 10px 0 0;
+      font-size: 0.9rem;
       font-weight: 600;
       color: #111;
       white-space: nowrap;
