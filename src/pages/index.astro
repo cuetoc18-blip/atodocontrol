@@ -135,16 +135,13 @@ function foto(n) {
       overlay.id = 'reel-overlay';
       overlay.innerHTML = `
         <div class="reel-visor">
-          <video id="reel-video" playsinline loop autoplay></video>
+          <video id="reel-video" playsinline loop autoplay muted></video>
           <div class="reel-texto">
             <div class="reel-titulo" id="reel-titulo"></div>
             <div class="reel-desc" id="reel-desc"></div>
+            <span class="reel-vermas" id="reel-vermas" style="display:none;">Ver más</span>
           </div>
           <button class="reel-cerrar">✕</button>
-          <div class="reel-flechas">
-            <button class="reel-prev">‹</button>
-            <button class="reel-next">›</button>
-          </div>
         </div>
       `;
       document.body.appendChild(overlay);
@@ -286,22 +283,28 @@ function foto(n) {
     }
     :global(.reel-texto) {
       position: absolute;
-      bottom: 80px;
+      bottom: 20px;
       left: 16px;
-      right: 60px;
+      right: 16px;
       color: #fff;
-      text-shadow: 0 1px 4px rgba(0,0,0,.6);
+      text-shadow: 0 1px 3px rgba(0,0,0,.7);
     }
     :global(.reel-titulo) {
-      font-size: 1.1rem;
+      font-size: 1rem;
       font-weight: 700;
-      margin-bottom: 6px;
+      margin-bottom: 4px;
       line-height: 1.3;
     }
     :global(.reel-desc) {
-      font-size: .9rem;
-      opacity: .9;
+      font-size: .88rem;
       line-height: 1.4;
+      opacity: .95;
+    }
+    :global(.reel-vermas) {
+      color: #fff;
+      font-weight: 700;
+      font-size: .85rem;
+      cursor: pointer;
     }
     :global(.reel-cerrar) {
       position: absolute;
@@ -314,25 +317,6 @@ function foto(n) {
       width: 36px;
       height: 36px;
       font-size: 18px;
-      cursor: pointer;
-    }
-    :global(.reel-flechas) {
-      position: absolute;
-      right: 12px;
-      top: 50%;
-      transform: translateY(-50%);
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-    }
-    :global(.reel-prev), :global(.reel-next) {
-      background: rgba(0,0,0,.4);
-      color: #fff;
-      border: none;
-      border-radius: 50%;
-      width: 40px;
-      height: 40px;
-      font-size: 24px;
       cursor: pointer;
     }
     :global(.reel-item) {
