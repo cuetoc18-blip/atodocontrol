@@ -103,7 +103,7 @@ function foto(n) {
           const videoUrl = `/media/${reel.video_path}`;
           html += `
             <div class="reel-item">
-              <video src="${videoUrl}" controls playsinline preload="metadata"></video>
+              <video src="${videoUrl}" controls playsinline preload="auto" muted></video>
               <p class="reel-title">${reel.titulo || ''}</p>
             </div>
           `;
@@ -196,7 +196,8 @@ function foto(n) {
       -webkit-overflow-scrolling: touch;
     }
     .reel-item {
-      flex: 0 0 90px;
+      flex: 0 0 28%;
+      max-width: 140px;
       scroll-snap-align: start;
     }
     .reel-item video {
