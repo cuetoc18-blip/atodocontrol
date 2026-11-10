@@ -135,7 +135,7 @@ function foto(n) {
       overlay.id = 'reel-overlay';
       overlay.innerHTML = `
         <div class="reel-visor">
-          <video id="reel-video" playsinline loop autoplay muted></video>
+          <video id="reel-video" playsinline loop autoplay></video>
           <div class="reel-texto">
             <div class="reel-titulo" id="reel-titulo"></div>
             <div class="reel-desc" id="reel-desc"></div>
@@ -149,29 +149,52 @@ function foto(n) {
       const video = overlay.querySelector('#reel-video');
       const tituloEl = overlay.querySelector('#reel-titulo');
       const descEl = overlay.querySelector('#reel-desc');
+      const verMas = overlay.querySelector('#reel-vermas');
 
       function mostrar(i) {
         if (i < 0 || i >= lista.length) return;
         idx = i;
         const r = lista[idx];
         video.src = r.video_url;
-        video.play().catch(()=>{});
+        video.muted = false;
+        video.play().catch(() => {
+          video.muted = true;
+          video.play();
+        });
         tituloEl.textContent = r.titulo || '';
-        descEl.textContent = r.descripcion || '';
+        const desc = r.descripcion || '';
+        if (desc.length > 100) {
+          descEl.textContent = desc.slice(0, 100) + '...';
+          verMas.style.display = 'inline';
+          verMas.onclick = () => { descEl.textContent = desc; verMas.style.display = 'none'; };
+        } else {
+          descEl.textContent = desc;
+          verMas.style.display = 'none';
+        }
       }
       mostrar(idx);
 
       overlay.querySelector('.reel-cerrar').onclick = () => overlay.remove();
-      overlay.querySelector('.reel-next').onclick = () => mostrar(idx + 1);
-      overlay.querySelector('.reel-prev').onclick = () => mostrar(idx - 1);
 
       let startX = 0;
-      overlay.addEventListener('touchstart', e => { startX = e.touches[0].clientX; }, {passive:true});
+      overlay.addEventListener('touchstart', e => { startX = e.touches[0].clientX; }, {passive: true});
       overlay.addEventListener('touchend', e => {
         const dx = e.changedTouches[0].clientX - startX;
-        if (dx < -50) mostrar(idx + 1);
-        if (dx > 50) mostrar(idx - 1);
-      }, {passive:true});
+        if (Math.abs(dx) > 40) {
+          if (dx < 0) mostrar(idx + 1);
+          else mostrar(idx - 1);
+        }
+      }, {passive: true});
+
+      // También con mouse para pruebas en escritorio
+      overlay.addEventListener('mousedown', e => { startX = e.clientX; });
+      overlay.addEventListener('mouseup', e => {
+        const dx = e.clientX - startX;
+        if (Math.abs(dx) > 40) {
+          if (dx < 0) mostrar(idx + 1);
+          else mostrar(idx - 1);
+        }
+      });
     }
 
     cargarReels();
