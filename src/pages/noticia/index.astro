@@ -1,11 +1,235 @@
 ---
-import Layout from '../../layouts/Layout.astro';
+import Layout from '../layouts/Layout.astro';
+import { supabase } from '../lib/supabase.js';
 
 export const prerender = false;
+
+const cat = Astro.url.searchParams.get('cat') || '';
+const client = supabase();
+let q = client
+  .from('noticias')
+  .select('id,titulo,resumen,categoria,imagen_url,instagram_url,publicada,es_portada,fecha_publicacion,created_at')
+  .eq('publicada', true)
+  .order('fecha_publicacion', { ascending: false })
+  .limit(16);
+if (cat) q = q.eq('categoria', cat);
+const { data: rows } = await q;
+const list = rows || [];
+const featured = list.find(n => n.es_portada) || list[0];
+const rest = list.filter(n => n.id !== featured?.id);
+
+function hace(d) {
+  const ms = Date.now() - new Date(d).getTime();
+  const m = Math.max(0, Math.floor(ms / 60000));
+  if (m < 1) return 'Hace un momento';
+  if (m < 60) return `Hace ${m} min`;
+  const h = Math.floor(m / 60);
+  if (h < 24) return h === 1 ? 'Hace 1 hora' : `Hace ${h} horas`;
+  const days = Math.floor(h / 24);
+  return days === 1 ? 'Hace 1 día' : `Hace ${days} días`;
+}
+function foto(n) {
+  const u = n?.imagen_url || '';
+  if (!u || /(instagram|facebook|twitter|x)\.com/i.test(u)) return '';
+  const m = u.match(/\/noticias-imagenes\/(.+)$/);
+  return m ? '/media/' + m[1] : u;
+}
 ---
-<Layout title="Noticia | A Todo Control">
-  <div style="padding: 40px 16px; text-align: center;">
-    <p>Esta página no es necesaria. Las noticias se abren por su enlace individual.</p>
-    <p><a href="/">Volver al inicio</a></p>
+<Layout title="A Todo Control | Veeduría ciudadana y control político" description="Medio de veeduría ciudadana y control político." url="https://atodocontrol.co/">
+  <div class="feed">
+    {featured && (
+      <a class="hero" href={`/noticia/${featured.id}`}>
+        <div class="hero-txt">
+          <div class="meta">
+            <span class="sec">{featured.categoria || 'General'}</span>
+            <span class="time">{hace(featured.fecha_publicacion || featured.created_at)}</span>
+          </div>
+          <h1>{featured.titulo}</h1>
+          {featured.resumen && <p class="lead">{featured.resumen}</p>}
+        </div>
+        {foto(featured) ? (
+          <img src={foto(featured)} alt={featured.titulo} />
+        ) : (
+          <div class="ph">▶</div>
+        )}
+      </a>
+    )}
+
+    {!featured && <p class="empty">Aún no hay noticias publicadas.</p>}
+
+    <div class="lista">
+      {rest.map(n => (
+        <a class="row" href={`/noticia/${n.id}`}>
+          {foto(n) ? (
+            <img class="thumb" src={foto(n)} alt="" />
+          ) : (
+            <div class="thumb ph">▶</div>
+          )}
+          <div class="row-txt">
+            <div class="meta">
+              <span class="sec">{n.categoria || 'General'}</span>
+              <span class="time">{hace(n.fecha_publicacion || n.created_at)}</span>
+            </div>
+            <h2>{n.titulo}</h2>
+          </div>
+        </a>
+      ))}
+    </div>
+
+    <!-- SECCIÓN DE REELS -->
+    <section class="reels-section">
+      <h2 class="reels-title">Opinión en formato vertical</h2>
+      <p class="reels-subtitle">Reels</p>
+      <div id="reels-contenedor" class="reels-container"></div>
+    </section>
   </div>
+
+  <script>
+    async function cargarReels() {
+      const contenedor = document.getElementById('reels-contenedor');
+      if (!contenedor) return;
+
+      try {
+        const res = await fetch('/api/reels');
+        const reels = await res.json();
+
+        if (!reels.length) {
+          contenedor.innerHTML = '<p style="color:#64748b;text-align:center;padding:20px 0;">No hay reels</p>';
+          return;
+        }
+
+        let html = '';
+        for (const reel of reels) {
+          // Usar video_url que es lo que guarda el panel
+          const videoUrl = reel.video_url || '';
+          if (!videoUrl) continue;
+          html += `
+            <div class="reel-item">
+              <video src="${videoUrl}" controls playsinline preload="metadata" muted poster=""></video>
+              <p class="reel-title">${reel.titulo || ''}</p>
+            </div>
+          `;
+        }
+        contenedor.innerHTML = html;
+      } catch (e) {
+        contenedor.innerHTML = '<p style="color:#64748b;text-align:center;padding:20px 0;">Error cargando reels</p>';
+      }
+    }
+    cargarReels();
+  </script>
+
+  <style>
+    .feed { background: #fff; max-width: 1100px; margin: 0 auto; padding: 20px 24px 40px; }
+    .hero, .row { display: block; text-decoration: none; color: inherit; }
+    .meta { display: flex; align-items: baseline; gap: 8px; margin-bottom: 8px; }
+    .sec { color: #c1121f; font-size: .72rem; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; }
+    .time { color: #94a3b8; font-size: .78rem; }
+    .hero h1 {
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: 1.55rem;
+      line-height: 1.18;
+      font-weight: 800;
+      margin: 0 0 10px;
+      color: #111;
+    }
+    .lead { color: #475569; font-size: .98rem; line-height: 1.45; margin: 0 0 14px; }
+    .hero img, .hero .ph {
+      width: 100%;
+      height: 220px;
+      object-fit: cover;
+      object-position: center 35%;
+      display: block;
+      background: #e2e8f0;
+      border-radius: 6px;
+    }
+    .hero { padding-bottom: 18px; border-bottom: 1px solid #e5e7eb; margin-bottom: 4px; }
+    .lista { background: #fff; }
+    .row {
+      display: flex;
+      gap: 12px;
+      padding: 14px 0;
+      border-bottom: 1px solid #eee;
+      align-items: flex-start;
+    }
+    .thumb {
+      width: 92px;
+      height: 92px;
+      object-fit: cover;
+      flex-shrink: 0;
+      background: #e2e8f0;
+    }
+    .row-txt h2 {
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: 1.02rem;
+      line-height: 1.25;
+      font-weight: 700;
+      margin: 0;
+      color: #111;
+    }
+    .ph { display: flex; align-items: center; justify-content: center; background: #0d1b2a; color: #fff; font-size: 1.2rem; }
+    .empty { color: #64748b; padding: 24px 0; }
+
+    /* Estilos Reels */
+    .reels-section {
+      margin-top: 40px;
+      padding-top: 24px;
+      border-top: 1px solid #e5e7eb;
+    }
+    .reels-title {
+      font-size: 0.9rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: #64748b;
+      margin: 0 0 4px;
+    }
+    .reels-subtitle {
+      font-family: Georgia, serif;
+      font-size: 1.8rem;
+      font-weight: 800;
+      margin: 0 0 16px;
+      color: #111;
+    }
+    .reels-container {
+      display: flex;
+      gap: 10px;
+      overflow-x: auto;
+      padding: 4px 0 10px;
+      -webkit-overflow-scrolling: touch;
+    }
+    .reel-item {
+      flex: 0 0 90px;
+      width: 90px;
+      min-width: 90px;
+      max-width: 90px;
+    }
+    .reel-item video {
+      width: 90px !important;
+      height: 160px !important;
+      max-width: 90px !important;
+      max-height: 160px !important;
+      object-fit: cover;
+      border-radius: 8px;
+      background: #111;
+      display: block;
+    }
+    .reel-title {
+      margin: 8px 0 0;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: #111;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    @media (min-width: 900px) {
+      .hero { display: grid; grid-template-columns: 1.1fr .9fr; gap: 28px; align-items: center; }
+      .hero h1 { font-size: 2.35rem; margin-bottom: 12px; }
+      .lead { font-size: 1.05rem; }
+      .hero img, .hero .ph { height: 340px; border-radius: 8px; }
+      .thumb { width: 140px; height: 100px; }
+      .row-txt h2 { font-size: 1.15rem; }
+    }
+  </style>
 </Layout>
