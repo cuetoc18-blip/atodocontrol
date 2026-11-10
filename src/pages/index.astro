@@ -100,12 +100,14 @@ function foto(n) {
 
         let html = '';
         for (const reel of reels) {
-          // Usar video_url que es lo que guarda el panel
-          const videoUrl = reel.video_url || '';
+          let videoUrl = reel.video_url || '';
           if (!videoUrl) continue;
+          // Convertir URL de Supabase a /media/
+          const match = videoUrl.match(/\/noticias-imagenes\/(.+)$/);
+          if (match) videoUrl = '/media/' + match[1];
           html += `
             <div class="reel-item">
-              <video src="${videoUrl}" controls playsinline preload="metadata" muted poster=""></video>
+              <video src="${videoUrl}" controls playsinline preload="metadata" muted></video>
               <p class="reel-title">${reel.titulo || ''}</p>
             </div>
           `;
@@ -199,16 +201,16 @@ function foto(n) {
       scroll-snap-type: x mandatory;
     }
     .reel-item {
-      flex: 0 0 200px;
-      width: 200px;
-      min-width: 200px;
+      flex: 0 0 140px;
+      width: 140px;
+      min-width: 140px;
       scroll-snap-align: start;
     }
     .reel-item video {
-      width: 200px;
-      height: 356px;
+      width: 140px;
+      height: 249px;
       object-fit: cover;
-      border-radius: 16px;
+      border-radius: 12px;
       background: #000;
       display: block;
     }
