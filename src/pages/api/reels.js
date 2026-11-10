@@ -1,74 +1,66 @@
 import { createClient } from '@supabase/supabase-js';
 
-export const prerender = false;
-
-function getSupabase() {
-  const url = process.env.SUPABASE_URL;
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  if (!url || !key) {
-    throw new Error('Faltan variables de entorno SUPABASE_URL o SUPABASE_SERVICE_ROLE_KEY');
-  }
-  return createClient(url, key);
-}
+const supabase = createClient(
+  import.meta.env.SUPABASE_URL,
+  import.meta.env.SUPABASE_SERVICE_ROLE_KEY
+);
 
 export async function GET() {
-  try {
-    const supabase = getSupabase();
-    const { data, error } = await supabase
-      .from('reels')
-      .select('*')
-      .order('created_at', { ascending: false });
+  const { data, error } = await supabase
+    .from('reels')
+    .select('*')
+    .eq('publicado', true)
+    .order('created_at', { ascending: false });
 
-    if (error) {
-      return new Response(JSON.stringify({ error: 'Tabla reels: ' + error.message }), { status: 500 });
-    }
-    return new Response(JSON.stringify(data || []), {
-      headers: { 'Content-Type': 'application/json' }
-    });
-  } catch (e) {
-    return new Response(JSON.stringify({ error: e.message }), { status: 500 });
+  if (error) {
+    return new Response(JSON.stringify({ error: error.message }), { status: 500 });
   }
+  return new Response(JSON.stringify(data || []), {
+    headers: { 'Content-Type': 'application/json' }
+  });
 }
 
 export async function POST({ request }) {
-  try {
-    const supabase = getSupabase();
-    const form = await request.formData();
-    const titulo = String(form.get('titulo') || '').trim();
-    const file = form.get('video');
+  const form = await request.formData();
+  const titulo = form.get('titulo');
+  const descripcion = form.get('descripcion') || '';
+  const videoFile = form.get('video');
 
-    if (!titulo) {
-      return new Response(JSON.stringify({ error: 'Falta el título' }), { status: 400 });
-    }
-    if (!file || !file.name) {
-      return new Response(JSON.stringify({ error: 'No llegó el archivo de video' }), { status: 400 });
-    }
-
-    const ext = (file.name.split('.').pop() || 'mp4').toLowerCase();
-    const path = `reels/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
-
-    const { error: upErr } = await supabase.storage
-      .from('noticias-imagenes')
-      .upload(path, file, { contentType: file.type || 'video/mp4', upsert: true });
-
-    if (upErr) {
-      return new Response(JSON.stringify({ error: 'Storage: ' + upErr.message }), { status: 500 });
-    }
-
-    const { data, error } = await supabase
-      .from('reels')
-      .insert({ titulo, video_path: path })
-      .select()
-      .single();
-
-    if (error) {
-      return new Response(JSON.stringify({ error: 'Insert: ' + error.message }), { status: 500 });
-    }
-
-    return new Response(JSON.stringify(data), {
-      headers: { 'Content-Type': 'application/json' }
-    });
-  } catch (e) {
-    return new Response(JSON.stringify({ error: 'Excepción: ' + e.message }), { status: 500 });
+  if (!titulo || !videoFile) {
+    return new Response(JSON.stringify({ error: 'Título y video son obligatorios' }), { status: 400 });
   }
+
+  const fileName = `${Date.now()}-${videoFile.name.replace(/\s/g, '_')}`;
+  const { error: uploadError } = await supabase.storage
+    .from('reels-videos')
+    .upload(fileName, videoFile, {
+      contentType: videoFile.type,
+      upsert: false
+    });
+
+  if (uploadError) {
+    return new Response(JSON.stringify({ error: 'Error subiendo video: ' + uploadError.message }), { status: 500 });
+  }
+
+  const { data: publicUrl } = supabase.storage
+    .from('reels-videos')
+    .getPublicUrl(fileName);
+
+  const { data, error } = await supabase
+    .from('reels')
+    .insert({
+      titulo,
+      descripcion,
+      video_url: publicUrl.publicUrl,
+      video_path: fileName,
+      publicado: true
+    })
+    .select()
+    .single();
+
+  if (error) {
+    return new Response(JSON.stringify({ error: error.message }), { status: 500 });
+  }
+
+  return new Response(JSON.stringify(data), { status: 201 });
 }
