@@ -104,15 +104,14 @@ function foto(n) {
           if (!videoUrl) continue;
           html += `
             <div class="reel-item">
-              <video src="${videoUrl}" controls playsinline preload="auto" muted></video>
+              <video class="reel-video" src="${videoUrl}" controls playsinline preload="auto" muted></video>
               <p class="reel-title">${reel.titulo || ''}</p>
             </div>
           `;
         }
         contenedor.innerHTML = html;
-        // Forzar que cada video muestre el primer fotograma
         contenedor.querySelectorAll('video').forEach(v => {
-          v.addEventListener('loadeddata', () => { v.currentTime = 0.1; });
+          v.addEventListener('loadedmetadata', () => { try { v.currentTime = 0.5; } catch(e){} });
         });
       } catch (e) {
         contenedor.innerHTML = '<p style="color:#64748b;text-align:center;padding:20px 0;">Error cargando reels</p>';
@@ -202,17 +201,21 @@ function foto(n) {
       scroll-snap-type: x mandatory;
     }
     .reel-item {
-      flex: 0 0 120px;
-      width: 120px;
-      min-width: 120px;
+      flex: 0 0 110px !important;
+      width: 110px !important;
+      min-width: 110px !important;
+      max-width: 110px !important;
       scroll-snap-align: start;
     }
-    .reel-item video {
-      width: 120px;
-      height: 213px;
-      object-fit: cover;
+    .reel-item video,
+    .reel-video {
+      width: 110px !important;
+      height: 196px !important;
+      max-width: 110px !important;
+      max-height: 196px !important;
+      object-fit: cover !important;
       border-radius: 10px;
-      background: #000;
+      background: #111;
       display: block;
     }
     .reel-title {
