@@ -100,19 +100,20 @@ function foto(n) {
 
         let html = '';
         for (const reel of reels) {
-          let videoUrl = reel.video_url || '';
+          const videoUrl = reel.video_url || '';
           if (!videoUrl) continue;
-          // Convertir URL de Supabase a /media/
-          const match = videoUrl.match(/\/noticias-imagenes\/(.+)$/);
-          if (match) videoUrl = '/media/' + match[1];
           html += `
             <div class="reel-item">
-              <video src="${videoUrl}" controls playsinline preload="metadata" muted></video>
+              <video src="${videoUrl}" controls playsinline preload="auto" muted></video>
               <p class="reel-title">${reel.titulo || ''}</p>
             </div>
           `;
         }
         contenedor.innerHTML = html;
+        // Forzar que cada video muestre el primer fotograma
+        contenedor.querySelectorAll('video').forEach(v => {
+          v.addEventListener('loadeddata', () => { v.currentTime = 0.1; });
+        });
       } catch (e) {
         contenedor.innerHTML = '<p style="color:#64748b;text-align:center;padding:20px 0;">Error cargando reels</p>';
       }
@@ -201,16 +202,16 @@ function foto(n) {
       scroll-snap-type: x mandatory;
     }
     .reel-item {
-      flex: 0 0 140px;
-      width: 140px;
-      min-width: 140px;
+      flex: 0 0 120px;
+      width: 120px;
+      min-width: 120px;
       scroll-snap-align: start;
     }
     .reel-item video {
-      width: 140px;
-      height: 249px;
+      width: 120px;
+      height: 213px;
       object-fit: cover;
-      border-radius: 12px;
+      border-radius: 10px;
       background: #000;
       display: block;
     }
