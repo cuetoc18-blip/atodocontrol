@@ -103,7 +103,7 @@ function foto(n) {
           const videoUrl = reel.video_url || '';
           if (!videoUrl) continue;
           html += `
-            <div class="reel-item" data-src="${videoUrl}" data-titulo="${(reel.titulo||'').replace(/"/g,'"')}" data-desc="${(reel.descripcion||'').replace(/"/g,'"')}">
+            <div class="reel-item" data-id="${reel.id}" data-src="${videoUrl}">
               <div class="reel-thumb">
                 <video src="${videoUrl}" muted playsinline preload="metadata"></video>
                 <div class="reel-play">▶</div>
@@ -119,7 +119,8 @@ function foto(n) {
             v.addEventListener('loadedmetadata', () => { try { v.currentTime = 0.1; } catch(e){} });
           }
           item.addEventListener('click', () => {
-            abrirReels(reels, item.dataset.src);
+            const reelId = item.dataset.id;
+            if (reelId) window.location.href = '/reel/' + reelId;
           });
         });
       } catch (e) {
