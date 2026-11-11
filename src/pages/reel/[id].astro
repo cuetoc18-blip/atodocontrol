@@ -58,17 +58,30 @@ const url = `https://atodocontrol.co/reel/${id}`;
       v.muted = true;
       v.playsInline = true;
       v.setAttribute('playsinline', '');
+      v.setAttribute('webkit-playsinline', '');
       v.src = reels[i].video_url;
       v.load();
       preloaded[i] = v;
     }
 
     async function cargar() {
+      const video = document.getElementById('reel-video');
+      video.preload = 'auto';
+
       const res = await fetch('/api/reels');
       reels = await res.json();
       idx = reels.findIndex(x => x.id === id);
       if (idx < 0) idx = 0;
-      mostrar(idx);
+
+      const r = reels[idx];
+      video.src = r.video_url;
+      video.load();
+      video.play().catch(()=>{});
+
+      document.getElementById('reel-titulo').textContent = r.titulo || '';
+      document.getElementById('reel-desc').textContent = r.descripcion || '';
+      cargarLikes(r.id);
+
       preload(idx + 1);
       preload(idx - 1);
       preload(idx + 2);
@@ -81,12 +94,11 @@ const url = `https://atodocontrol.co/reel/${id}`;
       history.replaceState(null, '', '/reel/' + r.id);
 
       const video = document.getElementById('reel-video');
-      video.poster = r.imagen_url || '';
       const cached = preloaded[i];
 
       if (cached && cached.readyState >= 2) {
         video.src = cached.src;
-        video.currentTime = cached.currentTime || 0;
+        video.currentTime = 0;
       } else {
         video.src = r.video_url;
       }
@@ -217,11 +229,11 @@ const url = `https://atodocontrol.co/reel/${id}`;
       pointer-events: auto;
     }
     .reel-logo {
-      width: 64px;
-      height: 64px;
+      width: 72px;
+      height: 72px;
       border-radius: 50%;
       object-fit: cover;
-      background: #0d1b2a;
+      background: transparent;
       border: none;
     }
     .reel-nombre {
