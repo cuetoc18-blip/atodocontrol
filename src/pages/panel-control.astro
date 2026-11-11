@@ -96,14 +96,18 @@ if (!tieneSesion) {
               body: JSON.stringify({ action: 'get-upload-url', fileName: imagenFile.name })
             });
             const imgUrlData = await imgUrlRes.json();
-            if (imgUrlRes.ok) {
-              const imgUpload = await fetch(imgUrlData.signedUrl, {
-                method: 'PUT',
-                headers: { 'Content-Type': imagenFile.type || 'image/jpeg' },
-                body: imagenFile
-              });
-              if (imgUpload.ok) imagen_path = imgUrlData.path;
+            if (!imgUrlRes.ok) {
+              throw new Error('Error URL portada: ' + (imgUrlData.error || 'desconocido'));
             }
+            const imgUpload = await fetch(imgUrlData.signedUrl, {
+              method: 'PUT',
+              headers: { 'Content-Type': imagenFile.type || 'image/jpeg' },
+              body: imagenFile
+            });
+            if (!imgUpload.ok) {
+              throw new Error('Error subiendo portada: ' + imgUpload.status);
+            }
+            imagen_path = imgUrlData.path;
           }
 
           // 3. Guardar reel
