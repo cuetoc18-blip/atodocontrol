@@ -38,6 +38,9 @@ if (!tieneSesion) {
         <label>Video (MP4)</label>
         <input type="file" name="video" accept="video/mp4,video/*" required />
 
+        <label>Foto de portada (para compartir en WhatsApp/Facebook)</label>
+        <input type="file" name="imagen" accept="image/*" />
+
         <button type="submit">Publicar Reel</button>
       </form>
       <div id="reel-status"></div>
@@ -57,6 +60,7 @@ if (!tieneSesion) {
         const titulo = reelForm.querySelector('[name="titulo"]').value;
         const descripcion = reelForm.querySelector('[name="descripcion"]').value || '';
         const videoFile = reelForm.querySelector('[name="video"]').files[0];
+        const imagenFile = reelForm.querySelector('[name="imagen"]').files[0];
 
         if (!titulo || !videoFile) {
           reelStatus.textContent = 'Error: Título y video son obligatorios';
@@ -65,7 +69,8 @@ if (!tieneSesion) {
         }
 
         try {
-          // 1. Pedir URL firmada al servidor (sin exponer claves)
+          // 1. Subir video
+          reelStatus.textContent = 'Subiendo video...';
           const urlRes = await fetch('/api/reels', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -74,8 +79,6 @@ if (!tieneSesion) {
           const urlData = await urlRes.json();
           if (!urlRes.ok) throw new Error(urlData.error || 'No se pudo obtener URL');
 
-          // 2. Subir el video directo a la URL firmada
-          reelStatus.textContent = 'Subiendo video...';
           const uploadRes = await fetch(urlData.signedUrl, {
             method: 'PUT',
             headers: { 'Content-Type': videoFile.type || 'video/mp4' },
@@ -83,7 +86,27 @@ if (!tieneSesion) {
           });
           if (!uploadRes.ok) throw new Error('Error subiendo el video');
 
-          // 3. Registrar el reel en la base
+          // 2. Subir imagen de portada si hay
+          let imagen_path = null;
+          if (imagenFile) {
+            reelStatus.textContent = 'Subiendo portada...';
+            const imgUrlRes = await fetch('/api/reels', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ action: 'get-upload-url', fileName: imagenFile.name })
+            });
+            const imgUrlData = await imgUrlRes.json();
+            if (imgUrlRes.ok) {
+              const imgUpload = await fetch(imgUrlData.signedUrl, {
+                method: 'PUT',
+                headers: { 'Content-Type': imagenFile.type || 'image/jpeg' },
+                body: imagenFile
+              });
+              if (imgUpload.ok) imagen_path = imgUrlData.path;
+            }
+          }
+
+          // 3. Guardar reel
           reelStatus.textContent = 'Guardando...';
           const saveRes = await fetch('/api/reels', {
             method: 'POST',
@@ -92,7 +115,8 @@ if (!tieneSesion) {
               action: 'save-reel', 
               titulo, 
               descripcion, 
-              video_path: urlData.path 
+              video_path: urlData.path,
+              imagen_path
             })
           });
           const saveData = await saveRes.json();
