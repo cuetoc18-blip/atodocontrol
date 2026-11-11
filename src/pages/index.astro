@@ -151,7 +151,7 @@ function foto(n) {
             </div>
           </div>
           <div class="reel-acciones">
-            <button class="reel-like" id="reel-like">♡</button>
+            <button class="reel-like" id="reel-like">♡ <span id="like-count">0</span></button>
             <button class="reel-share" id="reel-share">↗</button>
           </div>
           <button class="reel-cerrar">✕</button>
@@ -184,24 +184,51 @@ function foto(n) {
           descEl.textContent = desc;
           verMas.style.display = 'none';
         }
+        cargarLikesOverlay(r.id);
       }
       mostrar(idx);
 
       overlay.querySelector('.reel-cerrar').onclick = () => overlay.remove();
 
       const likeBtn = overlay.querySelector('#reel-like');
-      likeBtn.onclick = () => {
-        likeBtn.textContent = likeBtn.textContent === '♡' ? '♥' : '♡';
-        likeBtn.style.color = likeBtn.textContent === '♥' ? '#ff2d55' : '#fff';
+      likeBtn.onclick = async () => {
+        const r = lista[idx];
+        if (!r) return;
+        const res = await fetch('/api/reels-like', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ reel_id: r.id })
+        });
+        const data = await res.json();
+        if (data.liked) {
+          likeBtn.innerHTML = '♥ <span id="like-count">' + data.likes + '</span>';
+          likeBtn.style.color = '#ff2d55';
+        } else {
+          likeBtn.innerHTML = '♡ <span id="like-count">' + data.likes + '</span>';
+          likeBtn.style.color = '#fff';
+        }
       };
+
+      async function cargarLikesOverlay(reelId) {
+        const res = await fetch('/api/reels-like?reel_id=' + reelId);
+        const data = await res.json();
+        if (data.liked) {
+          likeBtn.innerHTML = '♥ <span id="like-count">' + data.likes + '</span>';
+          likeBtn.style.color = '#ff2d55';
+        } else {
+          likeBtn.innerHTML = '♡ <span id="like-count">' + data.likes + '</span>';
+          likeBtn.style.color = '#fff';
+        }
+      }
 
       overlay.querySelector('#reel-share').onclick = () => {
         const r = lista[idx];
         const url = window.location.origin + '/reel/' + (r.id || idx);
+        const texto = (r.titulo || '') + (r.descripcion ? '\n' + r.descripcion : '');
         if (navigator.share) {
-          navigator.share({ title: r.titulo || 'Reel', url }).catch(()=>{});
+          navigator.share({ title: r.titulo || 'Reel', text: texto, url }).catch(()=>{});
         } else {
-          navigator.clipboard.writeText(url);
+          navigator.clipboard.writeText(texto + '\n' + url);
           alert('Enlace copiado');
         }
       };
@@ -363,8 +390,8 @@ function foto(n) {
       pointer-events: auto;
     }
     :global(.reel-logo) {
-      width: 36px;
-      height: 36px;
+      width: 44px;
+      height: 44px;
       border-radius: 50%;
       object-fit: cover;
       background: transparent;
