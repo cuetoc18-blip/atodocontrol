@@ -137,16 +137,18 @@ function foto(n) {
       overlay.innerHTML = `
         <div class="reel-visor">
           <video id="reel-video" playsinline loop autoplay preload="auto"></video>
-          <div class="reel-info">
-            <a href="/" class="reel-logo-link">
-              <img src="/logo2.png" alt="A Todo Control" class="reel-logo" />
-            </a>
-            <div class="reel-nombre">A Todo Control</div>
-          </div>
-          <div class="reel-texto">
-            <div class="reel-titulo" id="reel-titulo"></div>
-            <div class="reel-desc" id="reel-desc"></div>
-            <span class="reel-vermas" id="reel-vermas" style="display:none;">Ver más</span>
+          <div class="reel-bottom">
+            <div class="reel-info">
+              <a href="/" class="reel-logo-link">
+                <img src="/logo2.png" alt="A Todo Control" class="reel-logo" />
+              </a>
+              <div class="reel-nombre">A Todo Control</div>
+            </div>
+            <div class="reel-texto">
+              <div class="reel-titulo" id="reel-titulo"></div>
+              <div class="reel-desc" id="reel-desc"></div>
+              <span class="reel-vermas" id="reel-vermas" style="display:none;">Ver más</span>
+            </div>
           </div>
           <div class="reel-acciones">
             <button class="reel-like" id="reel-like">♡</button>
@@ -205,8 +207,12 @@ function foto(n) {
       };
 
       let startY = 0;
-      overlay.addEventListener('touchstart', e => { startY = e.touches[0].clientY; }, {passive: true});
+      overlay.addEventListener('touchstart', e => { 
+        if (e.target.closest('.reel-logo-link')) return;
+        startY = e.touches[0].clientY; 
+      }, {passive: true});
       overlay.addEventListener('touchend', e => {
+        if (e.target.closest('.reel-logo-link')) return;
         const dy = e.changedTouches[0].clientY - startY;
         if (Math.abs(dy) > 40) {
           if (dy < 0) mostrar(idx + 1);
@@ -336,23 +342,29 @@ function foto(n) {
       height: 100%;
       object-fit: cover;
     }
-    :global(.reel-info) {
+    :global(.reel-bottom) {
       position: absolute;
-      bottom: 160px;
+      bottom: 16px;
       left: 12px;
-      display: flex;
-      align-items: center;
-      gap: 10px;
+      right: 56px;
       color: #fff;
       z-index: 5;
+    }
+    :global(.reel-info) {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 8px;
     }
     :global(.reel-logo-link) {
       display: block;
       line-height: 0;
+      z-index: 20;
+      pointer-events: auto;
     }
     :global(.reel-logo) {
-      width: 48px;
-      height: 48px;
+      width: 36px;
+      height: 36px;
       border-radius: 50%;
       object-fit: cover;
       background: transparent;
@@ -362,6 +374,9 @@ function foto(n) {
       font-weight: 700;
       font-size: .9rem;
       text-shadow: 0 1px 3px rgba(0,0,0,.6);
+    }
+    :global(.reel-texto) {
+      text-shadow: 0 1px 3px rgba(0,0,0,.7);
     }
     :global(.reel-acciones) {
       position: absolute;
@@ -380,15 +395,6 @@ function foto(n) {
       cursor: pointer;
       text-shadow: 0 1px 4px rgba(0,0,0,.5);
       padding: 0;
-    }
-    :global(.reel-texto) {
-      position: absolute;
-      bottom: 16px;
-      left: 12px;
-      right: 60px;
-      color: #fff;
-      text-shadow: 0 1px 3px rgba(0,0,0,.7);
-      z-index: 2;
     }
     :global(.reel-titulo) {
       font-size: 1rem;
