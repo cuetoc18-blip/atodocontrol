@@ -1,11 +1,28 @@
 ---
 import Layout from '../../layouts/Layout.astro';
+import { createClient } from '@supabase/supabase-js';
 
 export const prerender = false;
 
 const { id } = Astro.params;
+
+const supabase = createClient(
+  import.meta.env.SUPABASE_URL,
+  import.meta.env.SUPABASE_SERVICE_ROLE_KEY
+);
+
+let reel = null;
+if (id) {
+  const { data } = await supabase.from('reels').select('*').eq('id', id).maybeSingle();
+  reel = data;
+}
+
+const titulo = reel?.titulo || 'Reel | A Todo Control';
+const descripcion = reel?.descripcion || 'Mira este reel en A Todo Control';
+const imagen = reel?.video_url || 'https://atodocontrol.co/og-default.jpg';
+const url = `https://atodocontrol.co/reel/${id}`;
 ---
-<Layout title="Reel | A Todo Control">
+<Layout title={titulo} description={descripcion} image={imagen} url={url}>
   <div id="reel-page">
     <div class="reel-box">
       <video id="reel-video" playsinline loop autoplay preload="auto"></video>
@@ -22,7 +39,7 @@ const { id } = Astro.params;
         </div>
       </div>
       <div class="reel-acciones">
-        <button class="reel-like" id="reel-like">♡</button>
+        <button class="reel-like" id="reel-like">♡ <span id="like-count">0</span></button>
         <button class="reel-share" id="reel-share">↗</button>
       </div>
       <a href="/" class="reel-cerrar">✕</a>
@@ -75,24 +92,53 @@ const { id } = Astro.params;
 
       document.getElementById('reel-titulo').textContent = r.titulo || '';
       document.getElementById('reel-desc').textContent = r.descripcion || '';
+      cargarLikes(r.id);
 
       preload(idx + 1);
       preload(idx - 1);
       preload(idx + 2);
     }
 
-    document.getElementById('reel-like').onclick = (e) => {
-      e.target.textContent = e.target.textContent === '♡' ? '♥' : '♡';
-      e.target.style.color = e.target.textContent === '♥' ? '#ff2d55' : '#fff';
+    document.getElementById('reel-like').onclick = async (e) => {
+      const btn = e.currentTarget;
+      const r = reels[idx];
+      if (!r) return;
+      const res = await fetch('/api/reels-like', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ reel_id: r.id })
+      });
+      const data = await res.json();
+      if (data.liked) {
+        btn.innerHTML = '♥ <span id="like-count">' + data.likes + '</span>';
+        btn.style.color = '#ff2d55';
+      } else {
+        btn.innerHTML = '♡ <span id="like-count">' + data.likes + '</span>';
+        btn.style.color = '#fff';
+      }
     };
+
+    async function cargarLikes(reelId) {
+      const res = await fetch('/api/reels-like?reel_id=' + reelId);
+      const data = await res.json();
+      const btn = document.getElementById('reel-like');
+      if (data.liked) {
+        btn.innerHTML = '♥ <span id="like-count">' + data.likes + '</span>';
+        btn.style.color = '#ff2d55';
+      } else {
+        btn.innerHTML = '♡ <span id="like-count">' + data.likes + '</span>';
+        btn.style.color = '#fff';
+      }
+    }
 
     document.getElementById('reel-share').onclick = () => {
       const r = reels[idx];
       const url = window.location.origin + '/reel/' + r.id;
+      const texto = (r.titulo || '') + (r.descripcion ? '\n' + r.descripcion : '');
       if (navigator.share) {
-        navigator.share({ title: r.titulo || 'Reel', url }).catch(()=>{});
+        navigator.share({ title: r.titulo || 'Reel', text: texto, url }).catch(()=>{});
       } else {
-        navigator.clipboard.writeText(url);
+        navigator.clipboard.writeText(texto + '\n' + url);
         alert('Enlace copiado');
       }
     };
@@ -169,8 +215,8 @@ const { id } = Astro.params;
       pointer-events: auto;
     }
     .reel-logo {
-      width: 36px;
-      height: 36px;
+      width: 44px;
+      height: 44px;
       border-radius: 50%;
       object-fit: cover;
       background: transparent;
