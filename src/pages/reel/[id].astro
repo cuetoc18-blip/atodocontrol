@@ -25,7 +25,7 @@ const url = `https://atodocontrol.co/reel/${id}`;
 <Layout title={titulo} description={descripcion} image={imagen} url={url}>
   <div id="reel-page">
     <div class="reel-box">
-      <video id="reel-video" playsinline loop autoplay preload="auto"></video>
+      <video id="reel-video" playsinline loop autoplay preload="metadata" poster="/logo2.png"></video>
       <div class="reel-bottom">
         <div class="reel-info">
           <a href="/" class="reel-logo-link">
@@ -80,6 +80,7 @@ const url = `https://atodocontrol.co/reel/${id}`;
       history.replaceState(null, '', '/reel/' + r.id);
 
       const video = document.getElementById('reel-video');
+      video.poster = r.imagen_url || '/logo2.png';
       const cached = preloaded[i];
 
       if (cached && cached.readyState >= 2) {
@@ -215,11 +216,11 @@ const url = `https://atodocontrol.co/reel/${id}`;
       pointer-events: auto;
     }
     .reel-logo {
-      width: 56px;
-      height: 56px;
+      width: 64px;
+      height: 64px;
       border-radius: 50%;
       object-fit: cover;
-      background: transparent;
+      background: #0d1b2a;
       border: none;
     }
     .reel-nombre {
