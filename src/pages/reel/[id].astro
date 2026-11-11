@@ -142,16 +142,21 @@ const { id } = Astro.params;
     }
     .reel-info {
       position: absolute;
-      bottom: 140px;
+      bottom: 160px;
       left: 12px;
       display: flex;
       align-items: center;
       gap: 10px;
       color: #fff;
+      z-index: 5;
+    }
+    .reel-logo-link {
+      display: block;
+      line-height: 0;
     }
     .reel-logo {
-      width: 52px;
-      height: 52px;
+      width: 48px;
+      height: 48px;
       border-radius: 50%;
       object-fit: cover;
       background: transparent;
@@ -164,11 +169,13 @@ const { id } = Astro.params;
     }
     .reel-texto {
       position: absolute;
-      bottom: 16px;
+      bottom: 20px;
       left: 12px;
       right: 56px;
       color: #fff;
       text-shadow: 0 1px 3px rgba(0,0,0,.7);
+      max-height: 120px;
+      overflow: hidden;
     }
     .reel-titulo { font-weight: 700; margin-bottom: 4px; font-size: .95rem; }
     .reel-desc { font-size: .85rem; opacity: .95; }
