@@ -9,13 +9,17 @@ const { id } = Astro.params;
   <div id="reel-page">
     <div class="reel-box">
       <video id="reel-video" playsinline loop autoplay preload="auto"></video>
-      <div class="reel-info">
-        <img src="/logo2.png" alt="A Todo Control" class="reel-logo" />
-        <div class="reel-nombre">A Todo Control</div>
-      </div>
-      <div class="reel-texto">
-        <div class="reel-titulo" id="reel-titulo"></div>
-        <div class="reel-desc" id="reel-desc"></div>
+      <div class="reel-bottom">
+        <div class="reel-info">
+          <a href="/" class="reel-logo-link">
+            <img src="/logo2.png" alt="A Todo Control" class="reel-logo" />
+          </a>
+          <div class="reel-nombre">A Todo Control</div>
+        </div>
+        <div class="reel-texto">
+          <div class="reel-titulo" id="reel-titulo"></div>
+          <div class="reel-desc" id="reel-desc"></div>
+        </div>
       </div>
       <div class="reel-acciones">
         <button class="reel-like" id="reel-like">♡</button>
@@ -95,8 +99,12 @@ const { id } = Astro.params;
 
     let startY = 0;
     const page = document.getElementById('reel-page');
-    page.addEventListener('touchstart', e => { startY = e.touches[0].clientY; }, {passive:true});
+    page.addEventListener('touchstart', e => { 
+      if (e.target.closest('.reel-logo-link')) return;
+      startY = e.touches[0].clientY; 
+    }, {passive:true});
     page.addEventListener('touchend', e => {
+      if (e.target.closest('.reel-logo-link')) return;
       const dy = e.changedTouches[0].clientY - startY;
       if (Math.abs(dy) > 40) {
         if (dy < 0) mostrar(idx + 1);
@@ -140,23 +148,29 @@ const { id } = Astro.params;
       height: 100%;
       object-fit: cover;
     }
-    .reel-info {
+    .reel-bottom {
       position: absolute;
-      bottom: 160px;
+      bottom: 16px;
       left: 12px;
-      display: flex;
-      align-items: center;
-      gap: 10px;
+      right: 56px;
       color: #fff;
       z-index: 5;
+    }
+    .reel-info {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 8px;
     }
     .reel-logo-link {
       display: block;
       line-height: 0;
+      z-index: 20;
+      pointer-events: auto;
     }
     .reel-logo {
-      width: 48px;
-      height: 48px;
+      width: 36px;
+      height: 36px;
       border-radius: 50%;
       object-fit: cover;
       background: transparent;
@@ -164,21 +178,14 @@ const { id } = Astro.params;
     }
     .reel-nombre {
       font-weight: 700;
-      font-size: .95rem;
+      font-size: .9rem;
       text-shadow: 0 1px 3px rgba(0,0,0,.6);
     }
     .reel-texto {
-      position: absolute;
-      bottom: 20px;
-      left: 12px;
-      right: 56px;
-      color: #fff;
       text-shadow: 0 1px 3px rgba(0,0,0,.7);
-      max-height: 120px;
-      overflow: hidden;
     }
-    .reel-titulo { font-weight: 700; margin-bottom: 4px; font-size: .95rem; }
-    .reel-desc { font-size: .85rem; opacity: .95; }
+    .reel-titulo { font-weight: 700; margin-bottom: 4px; font-size: .92rem; }
+    .reel-desc { font-size: .82rem; opacity: .95; line-height: 1.35; }
     .reel-acciones {
       position: absolute;
       right: 8px;
