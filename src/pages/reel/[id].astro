@@ -75,7 +75,6 @@ const url = `https://atodocontrol.co/reel/${id}`;
       if (videoUrl) {
         video.src = videoUrl;
         video.load();
-        video.play().catch(()=>{});
       }
 
       const res = await fetch('/api/reels');
@@ -88,12 +87,22 @@ const url = `https://atodocontrol.co/reel/${id}`;
         video.src = r.video_url;
         video.load();
       }
-      video.play().catch(()=>{});
+
+      const playPromise = video.play();
+      if (playPromise) {
+        playPromise.then(() => {
+          video.muted = false;
+        }).catch(() => {
+          video.muted = true;
+          video.play().catch(()=>{});
+        });
+      }
 
       document.getElementById('reel-titulo').textContent = r.titulo || '';
       document.getElementById('reel-desc').textContent = r.descripcion || '';
       cargarLikes(r.id);
 
+      preloaded[idx] = video;
       preload(idx + 1);
       preload(idx - 1);
     }
