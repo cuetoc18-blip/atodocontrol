@@ -25,7 +25,7 @@ const url = `https://atodocontrol.co/reel/${id}`;
 <Layout title={titulo} description={descripcion} image={imagen} url={url}>
   <div id="reel-page">
     <div class="reel-box">
-      <video id="reel-video" playsinline loop autoplay muted preload="auto"></video>
+      <video id="reel-video" playsinline loop preload="auto"></video>
       <div class="reel-bottom">
         <div class="reel-info">
           <a href="/" class="reel-logo-link">
@@ -92,6 +92,7 @@ const url = `https://atodocontrol.co/reel/${id}`;
 
       playBtn.onclick = () => {
         video.muted = false;
+        video.volume = 1;
         video.play();
         playBtn.style.display = 'none';
         preloaded[idx] = video;
