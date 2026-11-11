@@ -68,13 +68,12 @@ const url = `https://atodocontrol.co/reel/${id}`;
       const video = document.getElementById('reel-video');
       video.muted = true;
       video.playsInline = true;
-      video.setAttribute('playsinline', '');
-      video.setAttribute('webkit-playsinline', '');
       video.preload = 'auto';
 
       if (videoUrl) {
         video.src = videoUrl;
         video.load();
+        video.play().catch(()=>{});
       }
 
       const res = await fetch('/api/reels');
@@ -83,19 +82,10 @@ const url = `https://atodocontrol.co/reel/${id}`;
       if (idx < 0) idx = 0;
 
       const r = reels[idx];
-      if (video.src !== r.video_url) {
+      if (!video.src || video.src !== r.video_url) {
         video.src = r.video_url;
         video.load();
-      }
-
-      const playPromise = video.play();
-      if (playPromise) {
-        playPromise.then(() => {
-          video.muted = false;
-        }).catch(() => {
-          video.muted = true;
-          video.play().catch(()=>{});
-        });
+        video.play().catch(()=>{});
       }
 
       document.getElementById('reel-titulo').textContent = r.titulo || '';
@@ -105,6 +95,10 @@ const url = `https://atodocontrol.co/reel/${id}`;
       preloaded[idx] = video;
       preload(idx + 1);
       preload(idx - 1);
+
+      document.getElementById('reel-page').addEventListener('click', () => {
+        video.muted = false;
+      }, { once: true });
     }
 
     function mostrar(i) {
@@ -124,15 +118,7 @@ const url = `https://atodocontrol.co/reel/${id}`;
       }
 
       video.muted = true;
-      const playPromise = video.play();
-      if (playPromise) {
-        playPromise.then(() => {
-          video.muted = false;
-        }).catch(() => {
-          video.muted = true;
-          video.play().catch(()=>{});
-        });
-      }
+      video.play().catch(()=>{});
 
       document.getElementById('reel-titulo').textContent = r.titulo || '';
       document.getElementById('reel-desc').textContent = r.descripcion || '';
