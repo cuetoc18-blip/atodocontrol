@@ -25,7 +25,7 @@ const url = `https://atodocontrol.co/reel/${id}`;
 <Layout title={titulo} description={descripcion} image={imagen} url={url}>
   <div id="reel-page">
     <div class="reel-box">
-      <video id="reel-video" playsinline loop autoplay preload="auto"></video>
+      <video id="reel-video" playsinline loop autoplay muted preload="auto"></video>
       <div class="reel-bottom">
         <div class="reel-info">
           <a href="/" class="reel-logo-link">
@@ -66,6 +66,10 @@ const url = `https://atodocontrol.co/reel/${id}`;
 
     async function cargar() {
       const video = document.getElementById('reel-video');
+      video.muted = true;
+      video.playsInline = true;
+      video.setAttribute('playsinline', '');
+      video.setAttribute('webkit-playsinline', '');
       video.preload = 'auto';
 
       const res = await fetch('/api/reels');
@@ -76,7 +80,16 @@ const url = `https://atodocontrol.co/reel/${id}`;
       const r = reels[idx];
       video.src = r.video_url;
       video.load();
-      video.play().catch(()=>{});
+
+      const playPromise = video.play();
+      if (playPromise) {
+        playPromise.then(() => {
+          video.muted = false;
+        }).catch(() => {
+          video.muted = true;
+          video.play().catch(()=>{});
+        });
+      }
 
       document.getElementById('reel-titulo').textContent = r.titulo || '';
       document.getElementById('reel-desc').textContent = r.descripcion || '';
@@ -101,7 +114,17 @@ const url = `https://atodocontrol.co/reel/${id}`;
       } else {
         video.src = r.video_url;
       }
-      video.play().catch(()=>{});
+
+      video.muted = true;
+      const playPromise = video.play();
+      if (playPromise) {
+        playPromise.then(() => {
+          video.muted = false;
+        }).catch(() => {
+          video.muted = true;
+          video.play().catch(()=>{});
+        });
+      }
 
       document.getElementById('reel-titulo').textContent = r.titulo || '';
       document.getElementById('reel-desc').textContent = r.descripcion || '';
