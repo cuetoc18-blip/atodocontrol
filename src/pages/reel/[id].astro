@@ -35,6 +35,7 @@ const { id } = Astro.params;
       const v = document.createElement('video');
       v.preload = 'auto';
       v.muted = true;
+      v.playsInline = true;
       v.src = reels[i].video_url;
       v.load();
       preloaded[i] = v;
@@ -58,9 +59,11 @@ const { id } = Astro.params;
       history.replaceState(null, '', '/reel/' + r.id);
 
       const video = document.getElementById('reel-video');
-      const next = preloaded[i];
-      if (next && next.readyState >= 2) {
-        video.src = next.src;
+      const cached = preloaded[i];
+
+      if (cached && cached.readyState >= 2) {
+        video.src = cached.src;
+        video.currentTime = cached.currentTime || 0;
       } else {
         video.src = r.video_url;
       }
@@ -147,8 +150,8 @@ const { id } = Astro.params;
       color: #fff;
     }
     .reel-logo {
-      width: 48px;
-      height: 48px;
+      width: 56px;
+      height: 56px;
       border-radius: 50%;
       object-fit: cover;
       background: transparent;
