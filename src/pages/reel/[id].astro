@@ -46,7 +46,7 @@ const url = `https://atodocontrol.co/reel/${id}`;
     </div>
   </div>
 
-  <script define:vars={{ id }}>
+  <script define:vars={{ id, videoUrl: reel?.video_url }}>
     let reels = [];
     let idx = 0;
     const preloaded = {};
@@ -72,24 +72,23 @@ const url = `https://atodocontrol.co/reel/${id}`;
       video.setAttribute('webkit-playsinline', '');
       video.preload = 'auto';
 
+      if (videoUrl) {
+        video.src = videoUrl;
+        video.load();
+        video.play().catch(()=>{});
+      }
+
       const res = await fetch('/api/reels');
       reels = await res.json();
       idx = reels.findIndex(x => x.id === id);
       if (idx < 0) idx = 0;
 
       const r = reels[idx];
-      video.src = r.video_url;
-      video.load();
-
-      const playPromise = video.play();
-      if (playPromise) {
-        playPromise.then(() => {
-          video.muted = false;
-        }).catch(() => {
-          video.muted = true;
-          video.play().catch(()=>{});
-        });
+      if (video.src !== r.video_url) {
+        video.src = r.video_url;
+        video.load();
       }
+      video.play().catch(()=>{});
 
       document.getElementById('reel-titulo').textContent = r.titulo || '';
       document.getElementById('reel-desc').textContent = r.descripcion || '';
