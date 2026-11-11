@@ -66,15 +66,9 @@ const url = `https://atodocontrol.co/reel/${id}`;
 
     async function cargar() {
       const video = document.getElementById('reel-video');
-      video.muted = true;
+      const playBtn = document.getElementById('play-btn');
       video.playsInline = true;
       video.preload = 'auto';
-
-      if (videoUrl) {
-        video.src = videoUrl;
-        video.load();
-        video.play().catch(()=>{});
-      }
 
       const res = await fetch('/api/reels');
       reels = await res.json();
@@ -82,23 +76,21 @@ const url = `https://atodocontrol.co/reel/${id}`;
       if (idx < 0) idx = 0;
 
       const r = reels[idx];
-      if (!video.src || video.src !== r.video_url) {
-        video.src = r.video_url;
-        video.load();
-        video.play().catch(()=>{});
-      }
+      video.src = r.video_url;
+      video.load();
 
       document.getElementById('reel-titulo').textContent = r.titulo || '';
       document.getElementById('reel-desc').textContent = r.descripcion || '';
       cargarLikes(r.id);
 
-      preloaded[idx] = video;
-      preload(idx + 1);
-      preload(idx - 1);
-
-      document.getElementById('reel-page').addEventListener('click', () => {
+      playBtn.onclick = () => {
         video.muted = false;
-      }, { once: true });
+        video.play();
+        playBtn.style.display = 'none';
+        preloaded[idx] = video;
+        preload(idx + 1);
+        preload(idx - 1);
+      };
     }
 
     function mostrar(i) {
@@ -117,8 +109,9 @@ const url = `https://atodocontrol.co/reel/${id}`;
         video.src = r.video_url;
       }
 
-      video.muted = true;
+      video.muted = false;
       video.play().catch(()=>{});
+      document.getElementById('play-btn').style.display = 'none';
 
       document.getElementById('reel-titulo').textContent = r.titulo || '';
       document.getElementById('reel-desc').textContent = r.descripcion || '';
@@ -222,6 +215,21 @@ const url = `https://atodocontrol.co/reel/${id}`;
       width: 100%;
       height: 100%;
       object-fit: cover;
+    }
+    .play-btn {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 72px;
+      height: 72px;
+      border-radius: 50%;
+      background: rgba(0,0,0,.5);
+      color: #fff;
+      font-size: 32px;
+      border: none;
+      cursor: pointer;
+      z-index: 10;
     }
     .reel-bottom {
       position: absolute;
