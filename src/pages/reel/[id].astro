@@ -84,7 +84,6 @@ const url = `https://atodocontrol.co/reel/${id}`;
 
       preload(idx + 1);
       preload(idx - 1);
-      preload(idx + 2);
     }
 
     function mostrar(i) {
@@ -110,7 +109,6 @@ const url = `https://atodocontrol.co/reel/${id}`;
 
       preload(idx + 1);
       preload(idx - 1);
-      preload(idx + 2);
     }
 
     document.getElementById('reel-like').onclick = async (e) => {
@@ -229,10 +227,10 @@ const url = `https://atodocontrol.co/reel/${id}`;
       pointer-events: auto;
     }
     .reel-logo {
-      width: 72px;
-      height: 72px;
+      width: 56px;
+      height: 56px;
       border-radius: 50%;
-      object-fit: cover;
+      object-fit: contain;
       background: transparent;
       border: none;
     }
