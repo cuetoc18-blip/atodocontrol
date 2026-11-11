@@ -25,7 +25,7 @@ const url = `https://atodocontrol.co/reel/${id}`;
 <Layout title={titulo} description={descripcion} image={imagen} url={url}>
   <div id="reel-page">
     <div class="reel-box">
-      <video id="reel-video" playsinline loop autoplay preload="metadata" poster="/logo2.png"></video>
+      <video id="reel-video" playsinline loop autoplay preload="auto"></video>
       <div class="reel-bottom">
         <div class="reel-info">
           <a href="/" class="reel-logo-link">
@@ -57,6 +57,7 @@ const url = `https://atodocontrol.co/reel/${id}`;
       v.preload = 'auto';
       v.muted = true;
       v.playsInline = true;
+      v.setAttribute('playsinline', '');
       v.src = reels[i].video_url;
       v.load();
       preloaded[i] = v;
@@ -68,9 +69,11 @@ const url = `https://atodocontrol.co/reel/${id}`;
       idx = reels.findIndex(x => x.id === id);
       if (idx < 0) idx = 0;
       mostrar(idx);
-      preload(idx + 1);
-      preload(idx - 1);
-      preload(idx + 2);
+      setTimeout(() => {
+        preload(idx + 1);
+        preload(idx - 1);
+        preload(idx + 2);
+      }, 300);
     }
 
     function mostrar(i) {
@@ -80,7 +83,7 @@ const url = `https://atodocontrol.co/reel/${id}`;
       history.replaceState(null, '', '/reel/' + r.id);
 
       const video = document.getElementById('reel-video');
-      video.poster = r.imagen_url || '/logo2.png';
+      video.poster = r.imagen_url || '';
       const cached = preloaded[i];
 
       if (cached && cached.readyState >= 2) {
