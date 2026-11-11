@@ -138,7 +138,9 @@ function foto(n) {
         <div class="reel-visor">
           <video id="reel-video" playsinline loop autoplay preload="auto"></video>
           <div class="reel-info">
-            <img src="/logo2.png" alt="A Todo Control" class="reel-logo" />
+            <a href="/" class="reel-logo-link">
+              <img src="/logo2.png" alt="A Todo Control" class="reel-logo" />
+            </a>
             <div class="reel-nombre">A Todo Control</div>
           </div>
           <div class="reel-texto">
@@ -336,17 +338,21 @@ function foto(n) {
     }
     :global(.reel-info) {
       position: absolute;
-      bottom: 140px;
+      bottom: 160px;
       left: 12px;
       display: flex;
       align-items: center;
       gap: 10px;
       color: #fff;
-      z-index: 2;
+      z-index: 5;
+    }
+    :global(.reel-logo-link) {
+      display: block;
+      line-height: 0;
     }
     :global(.reel-logo) {
-      width: 52px;
-      height: 52px;
+      width: 48px;
+      height: 48px;
       border-radius: 50%;
       object-fit: cover;
       background: transparent;
