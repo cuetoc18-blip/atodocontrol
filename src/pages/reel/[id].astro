@@ -70,14 +70,21 @@ const url = `https://atodocontrol.co/reel/${id}`;
       video.playsInline = true;
       video.preload = 'auto';
 
+      if (videoUrl) {
+        video.src = videoUrl;
+        video.load();
+      }
+
       const res = await fetch('/api/reels');
       reels = await res.json();
       idx = reels.findIndex(x => x.id === id);
       if (idx < 0) idx = 0;
 
       const r = reels[idx];
-      video.src = r.video_url;
-      video.load();
+      if (!video.src || video.src !== r.video_url) {
+        video.src = r.video_url;
+        video.load();
+      }
 
       document.getElementById('reel-titulo').textContent = r.titulo || '';
       document.getElementById('reel-desc').textContent = r.descripcion || '';
