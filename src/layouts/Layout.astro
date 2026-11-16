@@ -1,6 +1,7 @@
 ---
 import '../styles/global.css';
 import Footer from '../components/Footer.astro';
+import MenuHamburguesa from '../components/MenuHamburguesa.svelte';
 const {
   title = 'A Todo Control | Veeduría ciudadana y control político',
   description = 'Medio de veeduría ciudadana y control político.',
@@ -35,9 +36,7 @@ const {
   <body>
     <header>
       <div class="header-container">
-        <button class="hamburger" id="hamburger" type="button" aria-label="Menú">
-          <span></span><span></span><span></span>
-        </button>
+        <MenuHamburguesa client:load />
         <a class="logo" href="/"><img src="/logo-sm.webp" alt="A Todo Control" /></a>
         <div id="user-area" style="margin-left:auto;display:flex;align-items:center;gap:8px;padding-right:16px;"></div>
       </div>
@@ -60,9 +59,6 @@ const {
     <footer>
     </footer>
     <script is:inline>
-      const h = document.getElementById('hamburger');
-      const p = document.getElementById('menuPanel');
-      if (h && p) h.addEventListener('click', () => p.classList.toggle('open'));
     </script>
     <script>
       async function pintarUsuario() {
