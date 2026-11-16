@@ -57,9 +57,12 @@
       } else {
         videoEl.src = r.video_url;
       }
-      videoEl.muted = false;
-      videoEl.play().catch(() => {});
-      if (playBtnEl) playBtnEl.style.display = 'none';
+      videoEl.muted = true;
+      videoEl.play().then(() => {
+        if (playBtnEl) playBtnEl.style.display = 'none';
+      }).catch(() => {
+        if (playBtnEl) playBtnEl.style.display = 'flex';
+      });
     }
     preload(idx + 1);
     preload(idx - 1);
@@ -70,6 +73,10 @@
 
   function onTouchStart(e) {
     touchStartY = e.changedTouches[0].screenY;
+    if (videoEl && videoEl.muted) {
+      videoEl.muted = false;
+      videoEl.volume = 1;
+    }
   }
   function onTouchEnd(e) {
     touchEndY = e.changedTouches[0].screenY;
@@ -91,13 +98,46 @@
     preload(idx - 1);
   }
 
-  import { onMount } from 'svelte';
-  onMount(cargar);
+  let likes = 0;
+  let liked = false;
+
+  async function cargarLikes() {
+    if (!id) return;
+    try {
+      const res = await fetch('/api/reels-like?reel_id=' + id);
+      if (res.ok) {
+        const data = await res.json();
+        likes = data.likes || 0;
+        liked = data.liked || false;
+      }
+    } catch (e) {}
+  }
+
+  async function toggleLike() {
+    if (!id) return;
+    try {
+      const res = await fetch('/api/reels-like', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ reel_id: id })
+      });
+      if (res.ok) {
+        const data = await res.json();
+        likes = data.likes || 0;
+        liked = data.liked || false;
+      }
+    } catch (e) {}
+  }
+
+  onMount(() => {
+    cargar();
+    cargarLikes();
+  });
 </script>
 
 <div class="reel-box" on:touchstart={onTouchStart} on:touchend={onTouchEnd}>
-  <video bind:this={videoEl} playsinline loop preload="auto"></video>
-  <button bind:this={playBtnEl} class="play-btn" on:click={play}>▶</button>
+  <video bind:this={videoEl} playsinline loop preload="auto" muted autoplay></video>
+  <button bind:this={playBtnEl} class="play-btn" on:click={play} style="display:none">▶</button>
 
   <div class="reel-bottom">
     <div class="reel-info">
@@ -113,7 +153,7 @@
   </div>
 
   <div class="reel-acciones">
-    <button class="reel-like">♡ <span>0</span></button>
+    <button class="reel-like" on:click={toggleLike} style="color:{liked ? '#e11d48' : '#fff'}">♡ <span>{likes}</span></button>
     <button class="reel-comment">💬</button>
     <button class="reel-share">↗</button>
   </div>
@@ -150,6 +190,7 @@
   .reel-info { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
   .reel-logo { width: 32px; height: 32px; border-radius: 50%; object-fit: cover; }
   .reel-nombre { font-weight: 600; font-size: 14px; }
+  .reel-tag { background: #e11d48; color: #fff; font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 4px; display: inline-block; margin-top: 2px; letter-spacing: .5px; }
   .reel-titulo { font-weight: 700; font-size: 15px; margin-bottom: 4px; }
   .reel-desc { font-size: 13px; opacity: .9; }
   .reel-acciones {
