@@ -42,6 +42,8 @@
     } catch (e) {}
   }
 
+  let sonidoActivado = false;
+
   function mostrar(i) {
     if (reels.length === 0) return;
     const len = reels.length;
@@ -59,12 +61,16 @@
       } else {
         videoEl.src = r.video_url;
       }
-      videoEl.muted = true;
-      videoEl.play().then(() => {
+      if (sonidoActivado) {
+        videoEl.muted = false;
+        videoEl.volume = 1;
+        videoEl.play().catch(() => {});
         if (playBtnEl) playBtnEl.style.display = 'none';
-      }).catch(() => {
+      } else {
+        videoEl.muted = true;
+        videoEl.pause();
         if (playBtnEl) playBtnEl.style.display = 'flex';
-      });
+      }
     }
     preload(idx + 1);
     preload(idx - 1);
@@ -75,10 +81,6 @@
 
   function onTouchStart(e) {
     touchStartY = e.changedTouches[0].screenY;
-    if (videoEl && videoEl.muted) {
-      videoEl.muted = false;
-      videoEl.volume = 1;
-    }
   }
   function onTouchEnd(e) {
     touchEndY = e.changedTouches[0].screenY;
@@ -91,6 +93,7 @@
 
   function play() {
     if (!videoEl) return;
+    sonidoActivado = true;
     videoEl.muted = false;
     videoEl.volume = 1;
     videoEl.play();
@@ -138,8 +141,8 @@
 </script>
 
 <div class="reel-box" on:touchstart={onTouchStart} on:touchend={onTouchEnd}>
-  <video bind:this={videoEl} playsinline loop preload="auto" muted autoplay></video>
-  <button bind:this={playBtnEl} class="play-btn" on:click={play} style="display:none">▶</button>
+  <video bind:this={videoEl} playsinline loop preload="auto" muted></video>
+  <button bind:this={playBtnEl} class="play-btn" on:click={play}>▶</button>
 
   <div class="reel-bottom">
     <div class="reel-info">
