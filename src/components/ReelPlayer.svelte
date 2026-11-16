@@ -182,10 +182,14 @@
     border-radius: 50%;
     background: rgba(0,0,0,.5);
     color: #fff;
-    font-size: 32px;
+    font-size: 28px;
     border: none;
     cursor: pointer;
     z-index: 10;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding-left: 4px;
   }
   .reel-bottom {
     position: absolute;
