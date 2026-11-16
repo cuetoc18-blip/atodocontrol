@@ -1,47 +1,237 @@
 ---
 import Layout from '../../layouts/Layout.astro';
-import ReelPlayer from '../../components/ReelPlayer.svelte';
-import { createClient } from '@supabase/supabase-js';
-
-export const prerender = false;
+import { supabase, igPermalink, xStatusId, fbPermalink } from '../../lib/supabase.js';
 
 const { id } = Astro.params;
+const client = supabase();
+const { data } = await client.from('noticias').select('*').eq('id', id).maybeSingle();
 
-const supabase = createClient(
-  import.meta.env.SUPABASE_URL,
-  import.meta.env.SUPABASE_SERVICE_ROLE_KEY
-);
-
-let reel = null;
-if (id) {
-  const { data } = await supabase.from('reels').select('*').eq('id', id).maybeSingle();
-  reel = data;
+if (!data) {
+  return Astro.redirect('/');
 }
 
-const titulo = reel?.titulo || 'Reel | A Todo Control';
-const descripcion = reel?.descripcion || 'Mira este reel en A Todo Control';
-const imagen = reel?.imagen_url || 'https://atodocontrol.co/logo2.png';
-const url = `https://atodocontrol.co/reel/${id}`;
+const title = `${data.titulo} | A Todo Control`;
+const description = (data.resumen || data.titulo || '').slice(0, 180);
+const fotoOg = String(data.imagen_url || '').match(/\/noticias-imagenes\/(.+)$/);
+const image = fotoOg
+  ? `https://atodocontrol.co/media/${fotoOg[1]}`
+  : 'https://atodocontrol.co/og-default.jpg';
+const url = `https://atodocontrol.co/noticia/${id}`;
+const fecha = new Date(data.fecha_publicacion || data.created_at);
+const fechaTxt = fecha.toLocaleDateString('es-CO', { day: 'numeric', month: 'long', year: 'numeric' });
+const horaTxt = fecha.toLocaleTimeString('es-CO', { hour: 'numeric', minute: '2-digit', hour12: true });
+const share = encodeURIComponent(url);
+const shareT = encodeURIComponent(data.titulo || '');
+const linkRe = /https?:\/\/[^\s<>"']+/gi;
+
+function fotoLocal(u) {
+  const m = String(u || '').match(/\/noticias-imagenes\/(.+)$/);
+  return m ? '/media/' + m[1] : u;
+}
+function formatBody(t) {
+  return String(t || '')
+    .replace(/&/g, '&')
+    .replace(/</g, '<')
+    .replace(/>/g, '>')
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    .replace(/\*(.+?)\*/g, '<em>$1</em>');
+}
+function redDe(texto) {
+  const ig = igPermalink(texto);
+  const xid = xStatusId(texto);
+  const fb = fbPermalink(texto);
+  if (ig) return { tipo: 'ig', ig };
+  if (xid) return { tipo: 'x', xid };
+  if (fb) return { tipo: 'fb', fb, video: /\/(reel|videos|watch|share\/[vr])\//i.test(fb) };
+  return null;
+}
+function bloques(texto) {
+  const out = [];
+  for (const linea of String(texto || '').split('\n')) {
+    const t = linea.trim();
+    if (!t) continue;
+    const urls = t.match(linkRe) || [];
+    const social = urls.map(u => ({ u, red: redDe(u) })).filter(x => x.red);
+    if (!social.length) {
+      out.push({ tipo: 'p', html: formatBody(t) });
+      continue;
+    }
+    let limpio = t;
+    for (const s of social) limpio = limpio.replace(s.u, '');
+    if (limpio.trim()) out.push({ tipo: 'p', html: formatBody(limpio.trim()) });
+    for (const s of social) out.push(s.red);
+  }
+  return out;
+}
+const cuerpo = bloques(data.contenido);
+const campo = redDe(data.instagram_url || data.x_url || data.facebook_url || data.video_url || '');
+const campoYaEsta = campo && cuerpo.some(b =>
+  (campo.tipo === 'ig' && b.ig === campo.ig) ||
+  (campo.tipo === 'x' && b.xid === campo.xid) ||
+  (campo.tipo === 'fb' && b.fb === campo.fb)
+);
+const hayX = cuerpo.some(b => b.tipo === 'x') || (campo && !campoYaEsta && campo.tipo === 'x');
 ---
-<Layout title={titulo} description={descripcion} image={imagen} url={url}>
-  <div id="reel-page">
-    <ReelPlayer client:load id={id} videoUrl={reel?.video_url || ''} />
-    <div class="reel-bottom">
-      <div class="reel-info">
-        <a href="/" class="reel-logo-link">
-          <img src="/logo2.png" alt="A Todo Control" class="reel-logo" />
-        </a>
-        <div class="reel-nombre">A Todo Control</div>
+<Layout title={title} description={description} image={image} url={url}>
+  <div class="article-wrap">
+    <article class="article-card">
+      {data.imagen_url && !/(instagram|facebook|twitter|x)\.com/i.test(data.imagen_url) && (
+        <img class="article-image" src={fotoLocal(data.imagen_url)} alt={data.titulo} />
+      )}
+      <div class="article-body">
+        <span class="category">{data.categoria || 'General'}</span>
+        <h1>{data.titulo}</h1>
+        {data.resumen && <p class="dek">{data.resumen}</p>}
+        {campo && !campoYaEsta && campo.tipo === 'ig' && (
+          <div class="ig-embed"><iframe src={`${campo.ig}embed`} allowfullscreen loading="lazy" title="Instagram"></iframe></div>
+        )}
+        {campo && !campoYaEsta && campo.tipo === 'x' && (
+          <div class="x-embed"><blockquote class="twitter-tweet" data-dnt="true"><a href={`https://x.com/i/status/${campo.xid}`}>Ver en X</a></blockquote></div>
+        )}
+        {campo && !campoYaEsta && campo.tipo === 'fb' && (
+          <div class="fb-embed"><iframe src={`https://www.facebook.com/plugins/${campo.video ? 'video' : 'post'}.php?href=${encodeURIComponent(campo.fb)}&show_text=true&width=500`} allowfullscreen loading="lazy" title="Facebook"></iframe></div>
+        )}
+        <div class="byline">
+          <div>
+            <div class="byline-name">A Todo Control</div>
+            <div class="byline-date">{fechaTxt}</div>
+            <div>{horaTxt}</div>
+          </div>
+          <div class="share">
+            <a href={`https://www.facebook.com/sharer/sharer.php?u=${share}`} target="_blank" rel="noopener" title="Facebook"><img src="/share-facebook.png" alt="Facebook" /></a>
+            <a href={`https://twitter.com/intent/tweet?url=${share}&text=${shareT}`} target="_blank" rel="noopener" title="X"><img src="/share-x.webp" alt="X" /></a>
+            <a href={`https://api.whatsapp.com/send?text=${shareT}%20${share}`} target="_blank" rel="noopener" title="WhatsApp"><img src="/share-whatsapp.webp" alt="WhatsApp" /></a>
+          </div>
+        </div>
+        <div class="content">
+          {cuerpo.map(b => b.tipo === 'p' ? (
+            <p set:html={b.html} />
+          ) : b.tipo === 'ig' ? (
+            <div class="ig-embed"><iframe src={`${b.ig}embed`} allowfullscreen loading="lazy" title="Instagram"></iframe></div>
+          ) : b.tipo === 'x' ? (
+            <div class="x-embed"><blockquote class="twitter-tweet" data-dnt="true"><a href={`https://x.com/i/status/${b.xid}`}>Ver en X</a></blockquote></div>
+          ) : (
+            <div class="fb-embed"><iframe src={`https://www.facebook.com/plugins/${b.video ? 'video' : 'post'}.php?href=${encodeURIComponent(b.fb)}&show_text=true&width=500`} allowfullscreen loading="lazy" title="Facebook"></iframe></div>
+          ))}
+        </div>
+
+        <div id="comentarios" data-noticia={id}></div>
       </div>
-      <div class="reel-texto">
-        <div class="reel-titulo" id="reel-titulo"></div>
-        <div class="reel-desc" id="reel-desc"></div>
-      </div>
-    </div>
-    <div class="reel-acciones">
-      <button class="reel-like" id="reel-like">♡ <span id="like-count">0</span></button>
-      <button class="reel-share" id="reel-share">↗</button>
-    </div>
-    <a href="/" class="reel-cerrar">✕</a>
+    </article>
+    <div id="reels-despues" style="max-width:800px;margin:0 auto;padding:0 16px"></div>
   </div>
+
+  {hayX && <script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>}
+
+  <script define:vars={{ id }} is:inline>
+    (function () {
+      try {
+        var key = 'vista_' + id;
+        if (sessionStorage.getItem(key)) return;
+        sessionStorage.setItem(key, '1');
+        fetch('/api/vistas', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ nid: id })
+        });
+      } catch (e) {}
+    })();
+  </script>
+
+  <script>
+    const box = document.getElementById('comentarios');
+    const nid = box?.dataset.noticia;
+
+    async function cargar() {
+      let lista = [];
+      let sesion = false;
+      try { const r = await fetch('/api/comentarios/' + nid); if (r.ok) lista = await r.json(); } catch(e){}
+      try { const s = await fetch('/api/sesion-usuario', {credentials:'include'}); sesion = s.ok; } catch(e){}
+
+      let h = '<div style="margin-top:40px;border-top:1px solid #eee;padding-top:24px">';
+      h += '<div style="display:flex;justify-content:space-between;margin-bottom:16px"><h3 style="margin:0;font-size:22px;font-weight:700">Comentarios</h3><span style="font-size:13px;color:#666">Más recientes</span></div>';
+
+      if (sesion) {
+        h += '<div style="border:1px solid #e5e7eb;border-radius:12px;padding:12px;margin-bottom:20px;background:#fff">';
+        h += '<textarea id="txt" placeholder="Escribe tu comentario..." style="width:100%;height:80px;border:none;outline:none;font-size:15px;resize:none;box-sizing:border-box"></textarea>';
+        h += '<div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px"><span style="font-size:13px;color:#999">0/500</span><button id="enviar" style="background:#e11d48;color:#fff;border:none;padding:10px 22px;border-radius:8px;font-weight:600;cursor:pointer">Publicar</button></div>';
+        h += '</div>';
+      } else {
+        h += '<div style="background:#f9fafb;border-radius:12px;padding:20px;text-align:center;margin-bottom:20px">Debes <a href="/login" style="color:#e11d48;font-weight:600">iniciar sesión</a> para comentar.</div>';
+      }
+
+      h += '<div style="font-size:13px;color:#6b7280;margin-bottom:12px">' + lista.length + ' comentario' + (lista.length!==1?'s':'') + '</div>';
+
+      lista.forEach(c => {
+        const n = c.perfiles?.nombre || 'Usuario';
+        const genero = c.perfiles?.genero || 'm';
+        const f = new Date(c.created_at).toLocaleString('es-CO',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});
+        const estilo = genero === 'f' ? 'lorelei' : 'adventurer';
+        const avatar = `https://api.dicebear.com/7.x/${estilo}/svg?seed=${encodeURIComponent(n)}&backgroundColor=b6e3f4,c0aede,d1d4f9`;
+        h += '<div style="display:flex;gap:12px;padding:16px 0;border-bottom:1px solid #f3f4f6">';
+        h += `<img src="${avatar}" alt="${n}" style="width:40px;height:40px;border-radius:50%;object-fit:cover;flex-shrink:0">`;
+        h += '<div><div style="font-weight:600;font-size:14px">'+n+'</div>';
+        h += '<div style="font-size:15px;margin:4px 0">'+(c.texto||'').replace(/&/g,'&').replace(/</g,'<').replace(/>/g,'>')+'</div>';
+        h += '<div style="font-size:12px;color:#6b7280;margin-top:6px">'+f+'</div></div></div>';
+      });
+
+      h += '</div>';
+      box.innerHTML = h;
+
+      const btn = document.getElementById('enviar');
+      if (btn) btn.onclick = async () => {
+        const t = document.getElementById('txt').value.trim();
+        if (!t) return;
+        await fetch('/api/comentarios/'+nid, {method:'POST', headers:{'Content-Type':'application/json'}, credentials:'include', body:JSON.stringify({texto:t})});
+        cargar();
+      };
+    }
+    if (box && nid) cargar();
+  </script>
+
+  <script>
+    (function() {
+      async function cargarReelsAbajo() {
+        const cont = document.getElementById('reels-despues');
+        if (!cont) return;
+        try {
+          const res = await fetch('/api/reels');
+          if (!res.ok) return;
+          const reels = await res.json();
+          if (!Array.isArray(reels) || reels.length === 0) return;
+          let h = '<div style="margin-top:40px;border-top:1px solid #eee;padding-top:24px">';
+          h += '<h3 style="margin:0 0 16px;font-size:20px;font-weight:700">Reels</h3>';
+          h += '<div style="overflow:hidden"><div id="reels-track" style="display:flex;gap:12px;will-change:transform">';
+          const items = reels.concat(reels).concat(reels);
+          items.forEach(function(r) {
+            h += '<a href="/reel/' + r.id + '" style="flex:0 0 140px;text-decoration:none;color:inherit">';
+            h += '<div style="width:140px;height:220px;background:#111;border-radius:12px;overflow:hidden;position:relative">';
+            if (r.imagen_url) h += '<img src="' + r.imagen_url + '" style="width:100%;height:100%;object-fit:cover" alt="">';
+            h += '<div style="position:absolute;bottom:0;left:0;right:0;padding:8px;background:linear-gradient(transparent,rgba(0,0,0,.75));color:#fff;font-size:12px;font-weight:600">' + (r.titulo || '').slice(0, 40) + '</div>';
+            h += '</div></a>';
+          });
+          h += '</div></div></div>';
+          cont.innerHTML = h;
+
+          const track = document.getElementById('reels-track');
+          if (!track) return;
+          let pos = 0;
+          const itemW = 152;
+          const total = reels.length * itemW;
+          function loop() {
+            pos += 0.6;
+            if (pos >= total) pos = 0;
+            track.style.transform = 'translateX(-' + pos + 'px)';
+            requestAnimationFrame(loop);
+          }
+          loop();
+        } catch (e) {}
+      }
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', cargarReelsAbajo);
+      } else {
+        cargarReelsAbajo();
+      }
+    })();
+  </script>
 </Layout>
