@@ -5,6 +5,7 @@
   export let videoUrl = '';
   export let titulo = '';
   export let descripcion = '';
+  export let imagenUrl = '';
 
   let videoEl;
   let playBtnEl;
