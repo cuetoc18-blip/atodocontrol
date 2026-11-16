@@ -118,6 +118,7 @@ const hayX = cuerpo.some(b => b.tipo === 'x') || (campo && !campoYaEsta && campo
         <div id="comentarios" data-noticia={id}></div>
       </div>
     </article>
+    <div id="reels-despues" style="max-width:800px;margin:0 auto;padding:0 16px"></div>
   </div>
 
   {hayX && <script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>}
@@ -186,5 +187,60 @@ const hayX = cuerpo.some(b => b.tipo === 'x') || (campo && !campoYaEsta && campo
       };
     }
     if (box && nid) cargar();
+  </script>
+
+  <script is:inline>
+    (function() {
+      async function cargarReelsAbajo() {
+        var cont = document.getElementById('reels-despues');
+        if (!cont) return;
+        try {
+          var res = await fetch('/api/reels');
+          if (!res.ok) return;
+          var reels = await res.json();
+          if (!Array.isArray(reels) || reels.length === 0) return;
+          var h = '<div style="margin-top:40px;border-top:1px solid #eee;padding-top:24px">';
+          h += '<h3 style="margin:0 0 16px;font-size:20px;font-weight:700">Reels</h3>';
+          h += '<div style="overflow:hidden"><div id="reels-track" style="display:flex;gap:12px">';
+          var items = reels.concat(reels).concat(reels);
+          for (var i = 0; i < items.length; i++) {
+            var r = items[i];
+            h += '<a href="/reel/' + r.id + '" style="flex:0 0 140px;text-decoration:none;color:inherit">';
+            h += '<div style="width:140px;height:220px;background:#111;border-radius:12px;overflow:hidden;position:relative">';
+            if (r.imagen_url) h += '<img src="' + r.imagen_url + '" style="width:100%;height:100%;object-fit:cover" alt="">';
+            h += '<div style="position:absolute;bottom:0;left:0;right:0;padding:8px;background:linear-gradient(transparent,rgba(0,0,0,.75));color:#fff;font-size:12px;font-weight:600">' + (r.titulo || '').slice(0, 40) + '</div>';
+            h += '</div></a>';
+          }
+          h += '</div></div></div>';
+          cont.innerHTML = h;
+
+          var track = document.getElementById('reels-track');
+          if (!track) return;
+          var idx = 0;
+          var itemW = 152;
+          var total = reels.length;
+          setInterval(function() {
+            idx++;
+            if (idx >= total) {
+              track.style.transition = 'none';
+              track.style.transform = 'translateX(0px)';
+              idx = 1;
+              setTimeout(function() {
+                track.style.transition = 'transform .6s ease';
+                track.style.transform = 'translateX(-' + (idx * itemW) + 'px)';
+              }, 50);
+            } else {
+              track.style.transition = 'transform .6s ease';
+              track.style.transform = 'translateX(-' + (idx * itemW) + 'px)';
+            }
+          }, 2500);
+        } catch (e) {}
+      }
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', cargarReelsAbajo);
+      } else {
+        cargarReelsAbajo();
+      }
+    })();
   </script>
 </Layout>
