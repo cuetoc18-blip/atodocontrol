@@ -105,7 +105,7 @@ function foto(n) {
           html += `
             <div class="reel-item" data-id="${reel.id}" data-src="${videoUrl}">
               <div class="reel-thumb">
-                <video src="${videoUrl}" muted playsinline preload="metadata"></video>
+                <video src="${videoUrl}" muted playsinline loop preload="auto" autoplay></video>
                 <div class="reel-play">▶</div>
               </div>
               <p class="reel-title">${reel.titulo || ''}</p>
@@ -116,7 +116,7 @@ function foto(n) {
         contenedor.querySelectorAll('.reel-item').forEach(item => {
           const v = item.querySelector('video');
           if (v) {
-            v.addEventListener('loadedmetadata', () => { try { v.currentTime = 0.1; } catch(e){} });
+            v.play().catch(() => {});
           }
           item.addEventListener('click', () => {
             const reelId = item.dataset.id;
