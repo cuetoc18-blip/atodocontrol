@@ -112,7 +112,7 @@ function foto(n) {
             </div>
           `;
         }
-        contenedor.innerHTML = html;
+        contenedor.innerHTML = html + html + html;
         contenedor.querySelectorAll('.reel-item').forEach(item => {
           const v = item.querySelector('video');
           if (v) {
@@ -133,12 +133,20 @@ function foto(n) {
           });
         });
 
-        let scrollIdx = 0;
         const items = contenedor.querySelectorAll('.reel-item');
+        const total = items.length / 3;
+        let scrollIdx = total;
+        contenedor.scrollLeft = items[scrollIdx].offsetLeft;
+
         setInterval(() => {
-          if (items.length === 0) return;
-          scrollIdx = (scrollIdx + 1) % items.length;
-          items[scrollIdx].scrollIntoView({ behavior: 'smooth', inline: 'start', block: 'nearest' });
+          scrollIdx++;
+          contenedor.scrollTo({ left: items[scrollIdx].offsetLeft, behavior: 'smooth' });
+          if (scrollIdx >= total * 2) {
+            setTimeout(() => {
+              scrollIdx = total;
+              contenedor.scrollLeft = items[scrollIdx].offsetLeft;
+            }, 500);
+          }
         }, 4000);
       } catch (e) {
         contenedor.innerHTML = '<p style="color:#64748b;text-align:center;padding:20px 0;">Error cargando reels</p>';
