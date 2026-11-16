@@ -116,13 +116,30 @@ function foto(n) {
         contenedor.querySelectorAll('.reel-item').forEach(item => {
           const v = item.querySelector('video');
           if (v) {
-            v.play().catch(() => {});
+            const observer = new IntersectionObserver((entries) => {
+              entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                  v.play().catch(() => {});
+                } else {
+                  v.pause();
+                }
+              });
+            }, { threshold: 0.5 });
+            observer.observe(item);
           }
           item.addEventListener('click', () => {
             const reelId = item.dataset.id;
             if (reelId) window.location.href = '/reel/' + reelId;
           });
         });
+
+        let scrollIdx = 0;
+        const items = contenedor.querySelectorAll('.reel-item');
+        setInterval(() => {
+          if (items.length === 0) return;
+          scrollIdx = (scrollIdx + 1) % items.length;
+          items[scrollIdx].scrollIntoView({ behavior: 'smooth', inline: 'start', block: 'nearest' });
+        }, 4000);
       } catch (e) {
         contenedor.innerHTML = '<p style="color:#64748b;text-align:center;padding:20px 0;">Error cargando reels</p>';
       }
