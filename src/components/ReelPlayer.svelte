@@ -142,8 +142,8 @@
   });
 </script>
 
-<div class="reel-box" on:touchstart={onTouchStart} on:touchend={onTouchEnd} style="background-image: url('{imagenUrl}'); background-size: cover; background-position: center;">
-  <video bind:this={videoEl} playsinline loop preload="auto" muted poster={imagenUrl}></video>
+<div class="reel-box" on:touchstart={onTouchStart} on:touchend={onTouchEnd}>
+  <video bind:this={videoEl} playsinline loop preload="auto" muted></video>
   <button bind:this={playBtnEl} class="play-btn" on:click={play}>▶</button>
 
   <div class="reel-bottom">
