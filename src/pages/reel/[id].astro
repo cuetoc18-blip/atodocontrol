@@ -31,7 +31,7 @@ const url = `https://atodocontrol.co/reel/${id}`;
     .reel-cerrar { position: absolute; top: 16px; left: 16px; z-index: 20; color: #fff; font-size: 28px; text-decoration: none; background: rgba(0,0,0,.4); width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
   </style>
   <div id="reel-page">
-    <ReelPlayer client:load id={id} videoUrl={reel?.video_url || ''} titulo={reel?.titulo || ''} descripcion={reel?.descripcion || ''} />
+    <ReelPlayer client:load id={id} videoUrl={reel?.video_url || ''} titulo={reel?.titulo || ''} descripcion={reel?.descripcion || ''} imagenUrl={reel?.imagen_url || ''} />
     <a href="/" class="reel-cerrar">✕</a>
   </div>
 </Layout>
