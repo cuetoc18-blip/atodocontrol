@@ -1,4 +1,6 @@
 <script>
+  import { onMount } from 'svelte';
+
   export let id;
   export let videoUrl = '';
   export let titulo = '';
@@ -144,7 +146,10 @@
       <a href="/" class="reel-logo-link">
         <img src="/logo2.png" alt="A Todo Control" class="reel-logo" />
       </a>
-      <div class="reel-nombre">A Todo Control</div>
+      <div>
+        <div class="reel-nombre">A Todo Control</div>
+        <div class="reel-tag">Reel</div>
+      </div>
     </div>
     <div class="reel-texto">
       <div class="reel-titulo">{titulo}</div>
