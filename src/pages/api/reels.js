@@ -1,5 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 
+const BASE = 'http://13.140.183.160:8000';
+
 const supabase = createClient(
   import.meta.env.SUPABASE_URL,
   import.meta.env.SUPABASE_SERVICE_ROLE_KEY
@@ -21,7 +23,6 @@ export async function GET() {
 }
 
 export async function POST({ request }) {
-  // Verificar sesión
   const cookie = request.headers.get('cookie') || '';
   if (!cookie.includes('vb_session=')) {
     return new Response(JSON.stringify({ error: 'No autorizado' }), { status: 401 });
@@ -30,45 +31,42 @@ export async function POST({ request }) {
   try {
     const contentType = request.headers.get('content-type') || '';
 
-    // 1. Pedir URL firmada para subir
     if (contentType.includes('application/json')) {
       const body = await request.json();
-      
+
       if (body.action === 'get-upload-url') {
         const raw = (body.fileName || 'file').replace(/[^a-zA-Z0-9._-]/g, '_');
         const fileName = `${Date.now()}-${raw}`;
         const { data, error } = await supabase.storage
           .from('reels-videos')
           .createSignedUploadUrl(fileName);
-        
+
         if (error) {
           return new Response(JSON.stringify({ error: error.message }), { status: 500 });
         }
-        return new Response(JSON.stringify({ 
-          signedUrl: data.signedUrl, 
+        return new Response(JSON.stringify({
+          signedUrl: data.signedUrl,
           path: data.path,
-          token: data.token 
+          token: data.token
         }));
       }
 
-      // 2. Registrar el reel después de subir
       if (body.action === 'save-reel') {
         const { titulo, descripcion, video_path, imagen_path } = body;
         if (!titulo || !video_path) {
           return new Response(JSON.stringify({ error: 'Faltan datos' }), { status: 400 });
         }
-        const { data: videoUrl } = supabase.storage.from('reels-videos').getPublicUrl(video_path);
+        const video_url = `${BASE}/storage/v1/object/public/reels-videos/${video_path}`;
         let imagen_url = null;
         if (imagen_path) {
-          const { data: imgUrl } = supabase.storage.from('reels-videos').getPublicUrl(imagen_path);
-          imagen_url = imgUrl.publicUrl;
+          imagen_url = `${BASE}/storage/v1/object/public/reels-videos/${imagen_path}`;
         }
         const { data, error } = await supabase
           .from('reels')
           .insert({
             titulo,
             descripcion: descripcion || '',
-            video_url: videoUrl.publicUrl,
+            video_url,
             video_path,
             imagen_url,
             publicado: true

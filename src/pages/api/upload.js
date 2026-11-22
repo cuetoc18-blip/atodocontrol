@@ -1,6 +1,8 @@
 import { requireUser } from '../../lib/session.js';
 import { userClient } from '../../lib/supabase.js';
 
+const BASE = 'http://13.140.183.160:8000';
+
 export async function POST({ request }) {
   const s = requireUser(request);
   if (!s) return new Response(JSON.stringify({ error: 'No autorizado' }), { status: 401 });
@@ -15,6 +17,6 @@ export async function POST({ request }) {
     upsert: false
   });
   if (error) return new Response(JSON.stringify({ error: error.message }), { status: 500 });
-  const { data } = userClient(s.access_token).storage.from('noticias-imagenes').getPublicUrl(path);
-  return new Response(JSON.stringify({ url: data.publicUrl }), { headers: { 'Content-Type': 'application/json' } });
+  const url = `${BASE}/storage/v1/object/public/noticias-imagenes/${path}`;
+  return new Response(JSON.stringify({ url }), { headers: { 'Content-Type': 'application/json' } });
 }
