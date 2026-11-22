@@ -3,7 +3,6 @@ import Layout from '../layouts/Layout.astro';
 
 export const prerender = false;
 
-// Verificar sesión antes de mostrar el panel
 const cookie = Astro.request.headers.get('cookie') || '';
 const tieneSesion = cookie.includes('vb_session=');
 if (!tieneSesion) {
@@ -19,15 +18,13 @@ if (!tieneSesion) {
       <a href="#reels">Reels</a>
     </nav>
 
-    <!-- Sección Noticias (placeholder) -->
     <section id="noticias">
       <h2>Publicar Noticia</h2>
       <p>Aquí va tu formulario actual de noticias.</p>
     </section>
 
-    <!-- Sección Reels -->
     <section id="reels" class="reels-admin">
-      <h2>Subir Reel</h2>
+      <h2>Subir Reel (convierte a HLS)</h2>
       <form id="reel-form">
         <label>Título</label>
         <input type="text" name="titulo" required />
@@ -38,27 +35,62 @@ if (!tieneSesion) {
         <label>Video (MP4)</label>
         <input type="file" name="video" accept="video/mp4,video/*" required />
 
-        <label>Foto de portada (para compartir en WhatsApp/Facebook)</label>
+        <label>Foto de portada</label>
         <input type="file" name="imagen" accept="image/*" />
 
-        <button type="submit">Publicar Reel</button>
+        <button type="submit">Convertir a HLS y publicar</button>
       </form>
       <div id="reel-status"></div>
+      <div id="reel-log"></div>
     </section>
   </div>
 
-  <script>
+  <script type="module">
     const reelForm = document.getElementById('reel-form');
     const reelStatus = document.getElementById('reel-status');
+    const reelLog = document.getElementById('reel-log');
+
+    function log(msg) {
+      reelLog.textContent = msg;
+    }
+
+    let ffmpeg;
+    async function loadFFmpeg() {
+      if (ffmpeg) return;
+      log('Cargando convertidor...');
+      const { FFmpeg } = await import('https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.12.10/dist/esm/index.js');
+      const { toBlobURL } = await import('https://cdn.jsdelivr.net/npm/@ffmpeg/util@0.12.1/dist/esm/index.js');
+      ffmpeg = new FFmpeg();
+      const base = 'https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.6/dist/esm';
+      await ffmpeg.load({
+        coreURL: await toBlobURL(`${base}/ffmpeg-core.js`, 'text/javascript'),
+        wasmURL: await toBlobURL(`${base}/ffmpeg-core.wasm`, 'application/wasm'),
+      });
+    }
+
+    async function uploadBlob(path, blob) {
+      const urlRes = await fetch('/api/reels', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ action: 'get-upload-url', fileName: path })
+      });
+      const { signedUrl, path: savedPath } = await urlRes.json();
+      if (!urlRes.ok) throw new Error('No se pudo obtener URL');
+      const put = await fetch(signedUrl, { method: 'PUT', body: blob });
+      if (!put.ok) throw new Error('Error subiendo ' + path);
+      return savedPath || path;
+    }
 
     if (reelForm) {
       reelForm.addEventListener('submit', async (e) => {
         e.preventDefault();
-        reelStatus.textContent = 'Preparando subida...';
+        reelStatus.textContent = 'Iniciando...';
         reelStatus.style.color = '#333';
+        reelLog.textContent = '';
 
-        const titulo = reelForm.querySelector('[name="titulo"]').value;
-        const descripcion = reelForm.querySelector('[name="descripcion"]').value || '';
+        const titulo = reelForm.querySelector('[name="titulo"]').value.trim();
+        const descripcion = reelForm.querySelector('[name="descripcion"]').value.trim();
         const videoFile = reelForm.querySelector('[name="video"]').files[0];
         const imagenFile = reelForm.querySelector('[name="imagen"]').files[0];
 
@@ -69,66 +101,63 @@ if (!tieneSesion) {
         }
 
         try {
-          // 1. Subir video
-          reelStatus.textContent = 'Subiendo video...';
-          const urlRes = await fetch('/api/reels', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ action: 'get-upload-url', fileName: videoFile.name })
-          });
-          const urlData = await urlRes.json();
-          if (!urlRes.ok) throw new Error(urlData.error || 'No se pudo obtener URL');
+          await loadFFmpeg();
+          log('Leyendo video...');
+          const { fetchFile } = await import('https://cdn.jsdelivr.net/npm/@ffmpeg/util@0.12.1/dist/esm/index.js');
+          await ffmpeg.writeFile('input.mp4', await fetchFile(videoFile));
 
-          const uploadRes = await fetch(urlData.signedUrl, {
-            method: 'PUT',
-            headers: { 'Content-Type': videoFile.type || 'video/mp4' },
-            body: videoFile
-          });
-          if (!uploadRes.ok) throw new Error('Error subiendo el video');
+          const folder = `reel-${Date.now()}`;
+          log('Convirtiendo a HLS (esto puede tardar)...');
+          await ffmpeg.exec([
+            '-i', 'input.mp4',
+            '-c:v', 'libx264', '-c:a', 'aac',
+            '-hls_time', '4',
+            '-hls_playlist_type', 'vod',
+            '-hls_segment_filename', 'seg_%03d.ts',
+            '-f', 'hls', 'index.m3u8'
+          ]);
 
-          // 2. Subir imagen de portada si hay
+          log('Subiendo segmentos HLS...');
+          const dirFiles = await ffmpeg.listDir('.');
+          const hlsUploads = [];
+          for (const f of dirFiles) {
+            if (!f.name.endsWith('.ts') && f.name !== 'index.m3u8') continue;
+            const data = await ffmpeg.readFile(f.name);
+            const blob = new Blob([data.buffer], {
+              type: f.name.endsWith('.m3u8') ? 'application/vnd.apple.mpegurl' : 'video/mp2t'
+            });
+            hlsUploads.push(uploadBlob(`${folder}/${f.name}`, blob));
+          }
+          await Promise.all(hlsUploads);
+          log(`Subidos ${hlsUploads.length} archivos HLS`);
+
           let imagen_path = null;
           if (imagenFile) {
-            reelStatus.textContent = 'Subiendo portada...';
-            const imgUrlRes = await fetch('/api/reels', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ action: 'get-upload-url', fileName: imagenFile.name })
-            });
-            const imgUrlData = await imgUrlRes.json();
-            if (!imgUrlRes.ok) {
-              throw new Error('Error URL portada: ' + (imgUrlData.error || 'desconocido'));
-            }
-            const imgUpload = await fetch(imgUrlData.signedUrl, {
-              method: 'PUT',
-              headers: { 'Content-Type': imagenFile.type || 'image/jpeg' },
-              body: imagenFile
-            });
-            if (!imgUpload.ok) {
-              throw new Error('Error subiendo portada: ' + imgUpload.status);
-            }
-            imagen_path = imgUrlData.path;
+            log('Subiendo portada...');
+            imagen_path = await uploadBlob(`${folder}/poster${imagenFile.name.slice(imagenFile.name.lastIndexOf('.'))}`, imagenFile);
           }
 
-          // 3. Guardar reel
-          reelStatus.textContent = 'Guardando...';
+          log('Guardando reel...');
           const saveRes = await fetch('/api/reels', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ 
-              action: 'save-reel', 
-              titulo, 
-              descripcion, 
-              video_path: urlData.path,
-              imagen_path
+            credentials: 'include',
+            body: JSON.stringify({
+              action: 'save-reel',
+              titulo,
+              descripcion,
+              video_path: `${folder}/index.m3u8`,
+              imagen_path,
+              hls_path: `${folder}/index.m3u8`
             })
           });
           const saveData = await saveRes.json();
           if (!saveRes.ok) throw new Error(saveData.error || 'Error guardando');
 
-          reelStatus.textContent = 'Reel publicado correctamente';
+          reelStatus.textContent = 'Reel publicado en HLS';
           reelStatus.style.color = 'green';
           reelForm.reset();
+          log('');
         } catch (err) {
           reelStatus.textContent = 'Error: ' + err.message;
           reelStatus.style.color = 'red';
@@ -144,9 +173,7 @@ if (!tieneSesion) {
       padding: 20px;
       background: #fff;
     }
-    .admin h1 {
-      margin-bottom: 20px;
-    }
+    .admin h1 { margin-bottom: 20px; }
     .admin-nav {
       display: flex;
       gap: 16px;
@@ -159,12 +186,8 @@ if (!tieneSesion) {
       color: #0d1b2a;
       font-weight: 600;
     }
-    section {
-      margin-bottom: 40px;
-    }
-    .reels-admin {
-      padding-top: 10px;
-    }
+    section { margin-bottom: 40px; }
+    .reels-admin { padding-top: 10px; }
     label {
       display: block;
       margin: 14px 0 4px;
@@ -178,9 +201,7 @@ if (!tieneSesion) {
       border-radius: 6px;
       box-sizing: border-box;
     }
-    input[type="file"] {
-      margin-top: 6px;
-    }
+    input[type="file"] { margin-top: 6px; }
     button {
       background: #c1121f;
       color: white;
@@ -191,12 +212,13 @@ if (!tieneSesion) {
       font-weight: 600;
       margin-top: 12px;
     }
-    button:hover {
-      background: #a10e19;
-    }
-    #reel-status {
-      margin-top: 14px;
-      font-weight: 600;
+    button:hover { background: #a10e19; }
+    #reel-status { margin-top: 14px; font-weight: 600; }
+    #reel-log {
+      margin-top: 8px;
+      font-size: 13px;
+      color: #555;
+      min-height: 20px;
     }
   </style>
 </Layout>
