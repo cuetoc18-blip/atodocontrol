@@ -1,7 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
 
-const BASE = 'http://13.140.183.160:8000';
-
 const supabase = createClient(
   import.meta.env.SUPABASE_URL,
   import.meta.env.SUPABASE_SERVICE_ROLE_KEY
@@ -56,10 +54,11 @@ export async function POST({ request }) {
         if (!titulo || !video_path) {
           return new Response(JSON.stringify({ error: 'Faltan datos' }), { status: 400 });
         }
-        const video_url = `${BASE}/storage/v1/object/public/reels-videos/${video_path}`;
+        const base = (import.meta.env.SUPABASE_URL || '').replace(/\/$/, '');
+        const video_url = `${base}/storage/v1/object/public/reels-videos/${video_path}`;
         let imagen_url = null;
         if (imagen_path) {
-          imagen_url = `${BASE}/storage/v1/object/public/reels-videos/${imagen_path}`;
+          imagen_url = `${base}/storage/v1/object/public/reels-videos/${imagen_path}`;
         }
         const { data, error } = await supabase
           .from('reels')
