@@ -24,7 +24,7 @@ if (!tieneSesion) {
     </section>
 
     <section id="reels" class="reels-admin">
-      <h2>Subir Reel (convierte a HLS)</h2>
+      <h2>Subir Reel (HLS ya convertido)</h2>
       <form id="reel-form">
         <label>Título</label>
         <input type="text" name="titulo" required />
@@ -32,13 +32,13 @@ if (!tieneSesion) {
         <label>Descripción (opcional)</label>
         <textarea name="descripcion" rows="2"></textarea>
 
-        <label>Video (MP4)</label>
-        <input type="file" name="video" accept="video/mp4,video/*" required />
+        <label>Archivos HLS (index.m3u8 + segmentos .ts)</label>
+        <input type="file" name="hls" multiple accept=".m3u8,.ts,application/vnd.apple.mpegurl,video/mp2t" required />
 
         <label>Foto de portada</label>
         <input type="file" name="imagen" accept="image/*" />
 
-        <button type="submit">Convertir a HLS y publicar</button>
+        <button type="submit">Subir y publicar</button>
       </form>
       <div id="reel-status"></div>
       <div id="reel-log"></div>
@@ -52,24 +52,6 @@ if (!tieneSesion) {
 
     function log(msg) {
       reelLog.textContent = msg;
-    }
-
-    let ffmpeg;
-    let ffmpegReady = false;
-
-    async function loadFFmpeg() {
-      if (ffmpegReady) return;
-      log('Cargando convertidor...');
-      const { FFmpeg } = await import('https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.12.10/dist/esm/index.js');
-      const { toBlobURL } = await import('https://cdn.jsdelivr.net/npm/@ffmpeg/util@0.12.1/dist/esm/index.js');
-      ffmpeg = new FFmpeg();
-      const base = 'https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.6/dist/esm';
-      await ffmpeg.load({
-        coreURL: await toBlobURL(`${base}/ffmpeg-core.js`, 'text/javascript'),
-        wasmURL: await toBlobURL(`${base}/ffmpeg-core.wasm`, 'application/wasm'),
-      });
-      ffmpegReady = true;
-      log('Convertidor listo');
     }
 
     async function uploadBlob(path, blob) {
@@ -89,56 +71,47 @@ if (!tieneSesion) {
     if (reelForm) {
       reelForm.addEventListener('submit', async (e) => {
         e.preventDefault();
-        reelStatus.textContent = 'Iniciando...';
+        reelStatus.textContent = 'Subiendo...';
         reelStatus.style.color = '#333';
         reelLog.textContent = '';
 
         const titulo = reelForm.querySelector('[name="titulo"]').value.trim();
         const descripcion = reelForm.querySelector('[name="descripcion"]').value.trim();
-        const videoFile = reelForm.querySelector('[name="video"]').files[0];
+        const hlsFiles = Array.from(reelForm.querySelector('[name="hls"]').files);
         const imagenFile = reelForm.querySelector('[name="imagen"]').files[0];
 
-        if (!titulo || !videoFile) {
-          reelStatus.textContent = 'Error: Título y video son obligatorios';
+        if (!titulo || hlsFiles.length === 0) {
+          reelStatus.textContent = 'Error: Título y archivos HLS son obligatorios';
+          reelStatus.style.color = 'red';
+          return;
+        }
+
+        const m3u8 = hlsFiles.find(f => f.name.endsWith('.m3u8'));
+        if (!m3u8) {
+          reelStatus.textContent = 'Error: Falta el archivo index.m3u8';
           reelStatus.style.color = 'red';
           return;
         }
 
         try {
-          await loadFFmpeg();
-          log('Leyendo video...');
-          const { fetchFile } = await import('https://cdn.jsdelivr.net/npm/@ffmpeg/util@0.12.1/dist/esm/index.js');
-          await ffmpeg.writeFile('input.mp4', await fetchFile(videoFile));
-
           const folder = `reel-${Date.now()}`;
-          log('Convirtiendo a HLS (esto puede tardar)...');
-          await ffmpeg.exec([
-            '-i', 'input.mp4',
-            '-c:v', 'libx264', '-c:a', 'aac',
-            '-hls_time', '4',
-            '-hls_playlist_type', 'vod',
-            '-hls_segment_filename', 'seg_%03d.ts',
-            '-f', 'hls', 'index.m3u8'
-          ]);
+          log(`Subiendo ${hlsFiles.length} archivos...`);
 
-          log('Subiendo segmentos HLS...');
-          const dirFiles = await ffmpeg.listDir('.');
-          const hlsUploads = [];
-          for (const f of dirFiles) {
-            if (!f.name.endsWith('.ts') && f.name !== 'index.m3u8') continue;
-            const data = await ffmpeg.readFile(f.name);
-            const blob = new Blob([data.buffer], {
-              type: f.name.endsWith('.m3u8') ? 'application/vnd.apple.mpegurl' : 'video/mp2t'
-            });
-            hlsUploads.push(uploadBlob(`${folder}/${f.name}`, blob));
-          }
-          await Promise.all(hlsUploads);
-          log(`Subidos ${hlsUploads.length} archivos HLS`);
+          const uploads = hlsFiles.map(file => {
+            const type = file.name.endsWith('.m3u8')
+              ? 'application/vnd.apple.mpegurl'
+              : 'video/mp2t';
+            const blob = new Blob([file], { type });
+            return uploadBlob(`${folder}/${file.name}`, blob);
+          });
+
+          await Promise.all(uploads);
+          log('Archivos HLS subidos');
 
           let imagen_path = null;
           if (imagenFile) {
             log('Subiendo portada...');
-            imagen_path = await uploadBlob(`${folder}/poster${imagenFile.name.slice(imagenFile.name.lastIndexOf('.'))}`, imagenFile);
+            imagen_path = await uploadBlob(`${folder}/portada.jpg`, imagenFile);
           }
 
           log('Guardando reel...');
@@ -147,24 +120,24 @@ if (!tieneSesion) {
             headers: { 'Content-Type': 'application/json' },
             credentials: 'include',
             body: JSON.stringify({
-              action: 'save-reel',
+              action: 'create',
               titulo,
               descripcion,
-              video_path: `${folder}/index.m3u8`,
-              imagen_path,
-              hls_path: `${folder}/index.m3u8`
+              hls_path: `${folder}/index.m3u8`,
+              imagen_path
             })
           });
-          const saveData = await saveRes.json();
-          if (!saveRes.ok) throw new Error(saveData.error || 'Error guardando');
 
-          reelStatus.textContent = 'Reel publicado en HLS';
+          if (!saveRes.ok) throw new Error('Error al guardar el reel');
+
+          reelStatus.textContent = 'Reel publicado';
           reelStatus.style.color = 'green';
           reelForm.reset();
           log('');
         } catch (err) {
           reelStatus.textContent = 'Error: ' + err.message;
           reelStatus.style.color = 'red';
+          log(err.message);
         }
       });
     }
