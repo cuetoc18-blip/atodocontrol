@@ -26,7 +26,8 @@ export async function GET() {
   const reels = (data || []).map(r => ({
     ...r,
     video_url: toMediaUrl(r.video_path || r.video_url),
-    imagen_url: toMediaUrl(r.imagen_url)
+    imagen_url: toMediaUrl(r.imagen_url),
+    hls_url: r.hls_path ? `/media/reels/${r.hls_path}` : null
   }));
 
   return new Response(JSON.stringify(reels), {
@@ -64,7 +65,7 @@ export async function POST({ request }) {
       }
 
       if (body.action === 'save-reel') {
-        const { titulo, descripcion, video_path, imagen_path } = body;
+        const { titulo, descripcion, video_path, imagen_path, hls_path } = body;
         if (!titulo || !video_path) {
           return new Response(JSON.stringify({ error: 'Faltan datos' }), { status: 400 });
         }
@@ -80,6 +81,7 @@ export async function POST({ request }) {
             video_url,
             video_path,
             imagen_url,
+            hls_path: hls_path || null,
             publicado: true
           })
           .select()
