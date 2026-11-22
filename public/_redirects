@@ -1,1 +1,3 @@
-/media/*  https://hlqdkosclnmmdhasoupt.supabase.co/storage/v1/object/public/noticias-imagenes/:splat  200
+/og/:id.jpg  /.netlify/functions/og?id=:id  200
+/articulo.html  /noticia/:id  302
+/index.html  /  301
