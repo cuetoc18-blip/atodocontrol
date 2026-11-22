@@ -1,34 +1,25 @@
-import { createClient } from '@supabase/supabase-js';
-
 export const prerender = false;
 
-function getSupabase() {
-  return createClient(
-    process.env.SUPABASE_URL,
-    process.env.SUPABASE_SERVICE_ROLE_KEY
-  );
-}
+const BASE = process.env.SUPABASE_URL || '';
 
 export async function GET({ params, request }) {
   try {
-    const supabase = getSupabase();
     const path = params.path;
-
     if (!path) {
       return new Response('Falta path', { status: 400 });
     }
 
-    const { data, error } = await supabase.storage
-      .from('noticias-imagenes')
-      .download(path);
+    const base = BASE.replace(/\/$/, '');
+    const target = `${base}/storage/v1/object/public/noticias-imagenes/${path}`;
 
-    if (error || !data) {
-      return new Response('No encontrado', { status: 404 });
+    const upstream = await fetch(target);
+    if (!upstream.ok) {
+      return new Response('No encontrado', { status: upstream.status });
     }
 
-    const buffer = await data.arrayBuffer();
+    const buffer = await upstream.arrayBuffer();
     const total = buffer.byteLength;
-    const contentType = path.endsWith('.mp4') ? 'video/mp4' : 'application/octet-stream';
+    const contentType = upstream.headers.get('content-type') || 'application/octet-stream';
 
     const range = request.headers.get('range');
     if (range && contentType.startsWith('video/')) {
