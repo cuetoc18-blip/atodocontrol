@@ -5,6 +5,13 @@ const supabase = createClient(
   import.meta.env.SUPABASE_SERVICE_ROLE_KEY
 );
 
+function toMediaUrl(path) {
+  if (!path) return null;
+  if (path.startsWith('/media/')) return path;
+  const name = path.split('/').pop();
+  return `/media/reels/${name}`;
+}
+
 export async function GET() {
   const { data, error } = await supabase
     .from('reels')
@@ -15,7 +22,14 @@ export async function GET() {
   if (error) {
     return new Response(JSON.stringify({ error: error.message }), { status: 500 });
   }
-  return new Response(JSON.stringify(data || []), {
+
+  const reels = (data || []).map(r => ({
+    ...r,
+    video_url: toMediaUrl(r.video_path || r.video_url),
+    imagen_url: toMediaUrl(r.imagen_url)
+  }));
+
+  return new Response(JSON.stringify(reels), {
     headers: { 'Content-Type': 'application/json' }
   });
 }
@@ -54,12 +68,10 @@ export async function POST({ request }) {
         if (!titulo || !video_path) {
           return new Response(JSON.stringify({ error: 'Faltan datos' }), { status: 400 });
         }
-        const base = (import.meta.env.SUPABASE_URL || '').replace(/\/$/, '');
-        const video_url = `${base}/storage/v1/object/public/reels-videos/${video_path}`;
-        let imagen_url = null;
-        if (imagen_path) {
-          imagen_url = `${base}/storage/v1/object/public/reels-videos/${imagen_path}`;
-        }
+
+        const video_url = `/media/reels/${video_path.split('/').pop()}`;
+        const imagen_url = imagen_path ? `/media/reels/${imagen_path.split('/').pop()}` : null;
+
         const { data, error } = await supabase
           .from('reels')
           .insert({
@@ -72,6 +84,7 @@ export async function POST({ request }) {
           })
           .select()
           .single();
+
         if (error) {
           return new Response(JSON.stringify({ error: error.message }), { status: 500 });
         }
