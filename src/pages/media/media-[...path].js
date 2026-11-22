@@ -1,25 +1,28 @@
 export const prerender = false;
 
-const BASE = process.env.SUPABASE_URL || '';
-
 export async function GET({ params, request }) {
   try {
-    const path = params.path;
+    let path = params.path;
+    if (Array.isArray(path)) path = path.join('/');
     if (!path) {
       return new Response('Falta path', { status: 400 });
     }
 
-    const base = BASE.replace(/\/$/, '');
-    const target = `${base}/storage/v1/object/public/noticias-imagenes/${path}`;
+    const base = (process.env.SUPABASE_URL || '').replace(/\/$/, '');
+    if (!base) {
+      return new Response('Falta SUPABASE_URL', { status: 500 });
+    }
 
+    const target = `${base}/storage/v1/object/public/noticias-imagenes/${path}`;
     const upstream = await fetch(target);
+
     if (!upstream.ok) {
       return new Response('No encontrado', { status: upstream.status });
     }
 
     const buffer = await upstream.arrayBuffer();
     const total = buffer.byteLength;
-    const contentType = upstream.headers.get('content-type') || 'application/octet-stream';
+    const contentType = upstream.headers.get('content-type') || 'image/jpeg';
 
     const range = request.headers.get('range');
     if (range && contentType.startsWith('video/')) {
