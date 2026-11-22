@@ -13,7 +13,15 @@ export async function GET({ params, request }) {
       return new Response('Falta SUPABASE_URL', { status: 500 });
     }
 
-    const target = `${base}/storage/v1/object/public/noticias-imagenes/${path}`;
+    let bucket = 'noticias-imagenes';
+    let filePath = path;
+
+    if (path.startsWith('reels/')) {
+      bucket = 'reels-videos';
+      filePath = path.slice(6);
+    }
+
+    const target = `${base}/storage/v1/object/public/${bucket}/${filePath}`;
     const upstream = await fetch(target);
 
     if (!upstream.ok) {
@@ -22,10 +30,10 @@ export async function GET({ params, request }) {
 
     const buffer = await upstream.arrayBuffer();
     const total = buffer.byteLength;
-    const contentType = upstream.headers.get('content-type') || 'image/jpeg';
+    const contentType = upstream.headers.get('content-type') || 'application/octet-stream';
 
     const range = request.headers.get('range');
-    if (range && contentType.startsWith('video/')) {
+    if (range && (contentType.startsWith('video/') || contentType.startsWith('audio/'))) {
       const parts = range.replace(/bytes=/, '').split('-');
       const start = parseInt(parts[0], 10);
       const end = parts[1] ? parseInt(parts[1], 10) : Math.min(start + 1024 * 1024, total - 1);
