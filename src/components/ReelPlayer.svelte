@@ -1,5 +1,5 @@
 <script>
-  import { onMount } from 'svelte';
+  import { onMount, onDestroy } from 'svelte';
 
   export let id;
   export let videoUrl = '';
@@ -9,31 +9,70 @@
 
   let videoEl;
   let playBtnEl;
+  let posterEl;
   let reels = [];
   let idx = 0;
-  const preloaded = {};
+  let hls = null;
+  const preloadedImages = {};
   let touchStartY = 0;
   let touchEndY = 0;
+  let sonidoActivado = false;
+  let likes = 0;
+  let liked = false;
 
-  function preload(i) {
-    const len = reels.length;
-    if (len === 0) return;
-    const real = ((i % len) + len) % len;
-    if (preloaded[real]) return;
-    const v = document.createElement('video');
-    v.preload = 'auto';
-    v.muted = true;
-    v.playsInline = true;
-    v.src = reels[real].video_url;
-    v.load();
-    preloaded[real] = v;
+  function isHls(url) {
+    return url && url.includes('.m3u8');
+  }
+
+  function preloadImage(url) {
+    if (!url || preloadedImages[url]) return;
+    const img = new Image();
+    img.src = url;
+    preloadedImages[url] = img;
+  }
+
+  function destroyHls() {
+    if (hls) {
+      hls.destroy();
+      hls = null;
+    }
+  }
+
+  async function loadHlsJs() {
+    if (window.Hls) return;
+    await new Promise((resolve, reject) => {
+      const s = document.createElement('script');
+      s.src = 'https://cdn.jsdelivr.net/npm/hls.js@1.5.15/dist/hls.min.js';
+      s.onload = resolve;
+      s.onerror = reject;
+      document.head.appendChild(s);
+    });
+  }
+
+  async function attachSource(url) {
+    if (!videoEl || !url) return;
+    destroyHls();
+    videoEl.removeAttribute('src');
+    videoEl.load();
+
+    if (isHls(url)) {
+      await loadHlsJs();
+      if (window.Hls && window.Hls.isSupported()) {
+        hls = new window.Hls({ maxBufferLength: 15, maxMaxBufferLength: 30 });
+        hls.loadSource(url);
+        hls.attachMedia(videoEl);
+        hls.on(window.Hls.Events.MANIFEST_PARSED, () => {
+          if (sonidoActivado) videoEl.play().catch(() => {});
+        });
+      } else if (videoEl.canPlayType('application/vnd.apple.mpegurl')) {
+        videoEl.src = url;
+      }
+    } else {
+      videoEl.src = url;
+    }
   }
 
   async function cargar() {
-    if (videoUrl && videoEl) {
-      videoEl.src = videoUrl;
-      videoEl.load();
-    }
     try {
       const res = await fetch('/api/reels');
       reels = await res.json();
@@ -43,39 +82,40 @@
     } catch (e) {}
   }
 
-  let sonidoActivado = false;
-
-  function mostrar(i) {
+  async function mostrar(i) {
     if (reels.length === 0) return;
     const len = reels.length;
     idx = ((i % len) + len) % len;
     const r = reels[idx];
     titulo = r.titulo || '';
     descripcion = r.descripcion || '';
+    imagenUrl = r.imagen_url || '';
     history.replaceState(null, '', '/reel/' + r.id);
 
-    if (videoEl) {
-      const cached = preloaded[idx];
-      if (cached && cached.readyState >= 2) {
-        videoEl.src = cached.src;
-        videoEl.currentTime = 0;
-      } else {
-        videoEl.src = r.video_url;
-      }
-      videoEl.poster = r.imagen_url || '';
-      if (sonidoActivado) {
-        videoEl.muted = false;
-        videoEl.volume = 1;
-        videoEl.play().catch(() => {});
-        if (playBtnEl) playBtnEl.style.display = 'none';
-      } else {
-        videoEl.muted = true;
-        videoEl.pause();
-        if (playBtnEl) playBtnEl.style.display = 'flex';
-      }
+    if (posterEl && imagenUrl) {
+      posterEl.src = imagenUrl;
+      posterEl.style.opacity = '1';
     }
-    preload(idx + 1);
-    preload(idx - 1);
+
+    const src = r.hls_url || r.video_url || '';
+    await attachSource(src);
+    if (videoEl) videoEl.poster = imagenUrl;
+
+    if (sonidoActivado && videoEl) {
+      videoEl.muted = false;
+      videoEl.volume = 1;
+      videoEl.play().catch(() => {});
+      if (playBtnEl) playBtnEl.style.display = 'none';
+    } else if (videoEl) {
+      videoEl.muted = true;
+      videoEl.pause();
+      if (playBtnEl) playBtnEl.style.display = 'flex';
+    }
+
+    const next = reels[(idx + 1) % len];
+    const prev = reels[(idx - 1 + len) % len];
+    if (next?.imagen_url) preloadImage(next.imagen_url);
+    if (prev?.imagen_url) preloadImage(prev.imagen_url);
   }
 
   function next() { mostrar(idx + 1); }
@@ -100,13 +140,8 @@
     videoEl.volume = 1;
     videoEl.play();
     if (playBtnEl) playBtnEl.style.display = 'none';
-    preloaded[idx] = videoEl;
-    preload(idx + 1);
-    preload(idx - 1);
+    if (posterEl) posterEl.style.opacity = '0';
   }
-
-  let likes = 0;
-  let liked = false;
 
   async function cargarLikes() {
     if (!id) return;
@@ -137,13 +172,19 @@
   }
 
   onMount(() => {
+    if (imagenUrl) preloadImage(imagenUrl);
     cargar();
     cargarLikes();
   });
+
+  onDestroy(() => destroyHls());
 </script>
 
 <div class="reel-box" on:touchstart={onTouchStart} on:touchend={onTouchEnd}>
-  <video bind:this={videoEl} playsinline loop preload="auto" muted></video>
+  {#if imagenUrl}
+    <img bind:this={posterEl} class="reel-poster-bg" src={imagenUrl} alt="" />
+  {/if}
+  <video bind:this={videoEl} playsinline loop preload="auto" muted poster={imagenUrl}></video>
   <button bind:this={playBtnEl} class="play-btn" on:click={play}>▶</button>
 
   <div class="reel-bottom">
@@ -171,7 +212,16 @@
 
 <style>
   .reel-box { position: relative; height: 100%; width: 100%; background: #000; touch-action: pan-y; }
-  video { width: 100%; height: 100%; object-fit: cover; }
+  .reel-poster-bg {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    z-index: 1;
+    transition: opacity .3s;
+  }
+  video { width: 100%; height: 100%; object-fit: cover; position: relative; z-index: 2; }
   .play-btn {
     position: absolute;
     top: 50%;
