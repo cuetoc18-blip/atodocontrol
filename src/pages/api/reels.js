@@ -73,7 +73,7 @@ export async function POST({ request }) {
   try {
     const contentType = request.headers.get('content-type') || '';
 
-    if (contentType.includes('multipart/form-data')) {
+    if (contentType.includes('multipart/form-data') || contentType.includes('application/x-www-form-urlencoded')) {
       const form = await request.formData();
       const titulo = form.get('titulo')?.toString()?.trim();
       const descripcion = form.get('descripcion')?.toString()?.trim() || '';
@@ -87,7 +87,7 @@ export async function POST({ request }) {
       let imagen_path = null;
 
       for (const file of files) {
-        if (!(file instanceof File)) continue;
+        if (!(file instanceof File) || file.size === 0) continue;
         const path = `${folder}/${file.name}`;
         const buf = Buffer.from(await file.arrayBuffer());
         const { error } = await supabase.storage.from('reels-videos').upload(path, buf, {
@@ -131,7 +131,7 @@ export async function POST({ request }) {
       return json(data, 201);
     }
 
-    return json({ error: 'Usa multipart/form-data' }, 400);
+    return json({ error: 'Content-Type recibido: ' + contentType }, 400);
   } catch (e) {
     return json({ error: 'Error: ' + (e.message || String(e)) }, 500);
   }
