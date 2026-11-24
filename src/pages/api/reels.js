@@ -1,9 +1,23 @@
 import { createClient } from '@supabase/supabase-js';
+import { requireUser } from '../../lib/session.js';
 
 const supabase = createClient(
   import.meta.env.SUPABASE_URL,
   import.meta.env.SUPABASE_SERVICE_ROLE_KEY
 );
+
+function json(data, status = 200) {
+  return new Response(JSON.stringify(data), {
+    status,
+    headers: { 'Content-Type': 'application/json' }
+  });
+}
+
+async function esAdmin(s) {
+  if (!s || !s.user || !s.user.id) return false;
+  const { data } = await supabase.from('perfiles').select('rol').eq('id', s.user.id).maybeSingle();
+  return data && data.rol === 'admin';
+}
 
 function toMediaUrl(path) {
   if (!path) return null;
@@ -19,9 +33,7 @@ export async function GET() {
     .eq('publicado', true)
     .order('created_at', { ascending: false });
 
-  if (error) {
-    return new Response(JSON.stringify({ error: error.message }), { status: 500 });
-  }
+  if (error) return json({ error: error.message }, 500);
 
   const reels = (data || []).map(r => ({
     ...r,
@@ -30,16 +42,12 @@ export async function GET() {
     hls_url: r.hls_path ? `/media/reels/${r.hls_path}` : null
   }));
 
-  return new Response(JSON.stringify(reels), {
-    headers: { 'Content-Type': 'application/json' }
-  });
+  return json(reels);
 }
 
 export async function POST({ request }) {
-  const cookie = request.headers.get('cookie') || '';
-  if (!cookie.includes('vb_session=')) {
-    return new Response(JSON.stringify({ error: 'No autorizado' }), { status: 401 });
-  }
+  const s = requireUser(request);
+  if (!await esAdmin(s)) return json({ error: 'No autorizado' }, 401);
 
   try {
     const contentType = request.headers.get('content-type') || '';
@@ -54,22 +62,18 @@ export async function POST({ request }) {
           .from('reels-videos')
           .createSignedUploadUrl(fileName);
 
-        if (error) {
-          return new Response(JSON.stringify({ error: error.message }), { status: 500 });
-        }
-        return new Response(JSON.stringify({
+        if (error) return json({ error: error.message }, 500);
+        return json({
           signedUrl: data.signedUrl,
           path: data.path || fileName,
           token: data.token
-        }));
+        });
       }
 
       if (body.action === 'create' || body.action === 'save-reel') {
         const { titulo, descripcion, hls_path, imagen_path, video_path } = body;
         const path = hls_path || video_path;
-        if (!titulo || !path) {
-          return new Response(JSON.stringify({ error: 'Faltan datos' }), { status: 400 });
-        }
+        if (!titulo || !path) return json({ error: 'Faltan datos' }, 400);
 
         const video_url = `/media/reels/${path}`;
         const imagen_url = imagen_path ? `/media/reels/${imagen_path}` : null;
@@ -88,15 +92,13 @@ export async function POST({ request }) {
           .select()
           .single();
 
-        if (error) {
-          return new Response(JSON.stringify({ error: error.message }), { status: 500 });
-        }
-        return new Response(JSON.stringify(data), { status: 201 });
+        if (error) return json({ error: error.message }, 500);
+        return json(data, 201);
       }
     }
 
-    return new Response(JSON.stringify({ error: 'Acción no válida' }), { status: 400 });
+    return json({ error: 'Acción no válida' }, 400);
   } catch (e) {
-    return new Response(JSON.stringify({ error: 'Error: ' + (e.message || String(e)) }), { status: 500 });
+    return json({ error: 'Error: ' + (e.message || String(e)) }, 500);
   }
 }
