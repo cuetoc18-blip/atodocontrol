@@ -43,8 +43,7 @@ async function esAdmin(sesion) {
 function toMediaUrl(path) {
   if (!path) return null;
   if (path.startsWith('/media/')) return path;
-  const name = path.split('/').pop();
-  return `/media/reels/${name}`;
+  return `/media/reels/${path}`;
 }
 
 export async function GET() {
