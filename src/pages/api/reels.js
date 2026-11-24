@@ -60,7 +60,7 @@ export async function GET() {
     ...r,
     video_url: toMediaUrl(r.video_path || r.video_url),
     imagen_url: toMediaUrl(r.imagen_url),
-    hls_url: r.hls_path ? `/media/reels/${r.hls_path}` : null
+    hls_url: r.video_path ? `/media/reels/${r.video_path}` : null
   }));
 
   return json(reels);
@@ -121,7 +121,6 @@ export async function POST({ request }) {
           video_url,
           video_path: hls_path,
           imagen_url,
-          hls_path,
           publicado: true
         })
         .select()
