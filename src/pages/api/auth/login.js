@@ -44,7 +44,7 @@ export async function POST({ request }) {
       });
     }
 
-    if (perfil.rol !== 'admin') {
+    if (String(perfil.rol || '').trim().toLowerCase() !== 'admin') {
       return new Response(JSON.stringify({ ok: false, error: 'No tienes permiso de administrador' }), {
         status: 403,
         headers: { 'Content-Type': 'application/json' }
