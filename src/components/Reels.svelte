@@ -1,10 +1,11 @@
 <script>
-  import { onMount } from 'svelte';
+  import { onMount, onDestroy } from 'svelte';
 
   let reels = [];
   let loading = true;
   let error = null;
   let container;
+  let autoTimer = null;
 
   onMount(async () => {
     try {
@@ -33,7 +34,17 @@
         obs.observe(item);
       }
     });
+
+    if (!autoTimer && items.length > 1) {
+      let current = 0;
+      autoTimer = setInterval(() => {
+        current = (current + 1) % items.length;
+        container.scrollTo({ left: items[current].offsetLeft - container.offsetLeft, behavior: 'smooth' });
+      }, 4000);
+    }
   }
+
+  onDestroy(() => { if (autoTimer) clearInterval(autoTimer); });
 </script>
 
 {#if loading}
