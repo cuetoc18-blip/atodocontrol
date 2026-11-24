@@ -54,29 +54,6 @@ if (!tieneSesion) {
       reelLog.textContent = msg;
     }
 
-    async function uploadBlob(path, blob) {
-      const urlRes = await fetch('/api/reels', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ action: 'get-upload-url', fileName: path })
-      });
-      const urlData = await urlRes.json().catch(() => ({}));
-      if (!urlRes.ok) throw new Error(urlData.error || 'No se pudo obtener URL (status ' + urlRes.status + ')');
-      if (!urlData.signedUrl) throw new Error('No llegó signedUrl: ' + JSON.stringify(urlData));
-
-      const put = await fetch(urlData.signedUrl, {
-        method: 'PUT',
-        body: blob,
-        headers: { 'Content-Type': blob.type || 'application/octet-stream' }
-      });
-      if (!put.ok) {
-        const putText = await put.text().catch(() => '');
-        throw new Error('Error subiendo ' + path + ' (status ' + put.status + '): ' + putText.slice(0, 200));
-      }
-      return urlData.path || path;
-    }
-
     if (reelForm) {
       reelForm.addEventListener('submit', async (e) => {
         e.preventDefault();
@@ -103,42 +80,26 @@ if (!tieneSesion) {
         }
 
         try {
-          const folder = `reel-${Date.now()}`;
-          log(`Subiendo ${hlsFiles.length} archivos...`);
+          log(`Subiendo ${hlsFiles.length} archivos al servidor...`);
 
-          const uploads = hlsFiles.map(file => {
-            const type = file.name.endsWith('.m3u8')
-              ? 'application/vnd.apple.mpegurl'
-              : 'video/mp2t';
-            const blob = new Blob([file], { type });
-            return uploadBlob(`${folder}/${file.name}`, blob);
-          });
-
-          await Promise.all(uploads);
-          log('Archivos HLS subidos');
-
-          let imagen_path = null;
+          const formData = new FormData();
+          formData.append('titulo', titulo);
+          formData.append('descripcion', descripcion);
+          for (const file of hlsFiles) {
+            formData.append('hls', file);
+          }
           if (imagenFile) {
-            log('Subiendo portada...');
-            imagen_path = await uploadBlob(`${folder}/portada.jpg`, imagenFile);
+            formData.append('imagen', imagenFile);
           }
 
-          log('Guardando reel...');
-          const saveRes = await fetch('/api/reels', {
+          const res = await fetch('/api/reels', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
             credentials: 'include',
-            body: JSON.stringify({
-              action: 'create',
-              titulo,
-              descripcion,
-              hls_path: `${folder}/index.m3u8`,
-              imagen_path
-            })
+            body: formData
           });
 
-          const saveData = await saveRes.json().catch(() => ({}));
-          if (!saveRes.ok) throw new Error(saveData.error || 'Error al guardar el reel');
+          const data = await res.json().catch(() => ({}));
+          if (!res.ok) throw new Error(data.error || 'Error ' + res.status);
 
           reelStatus.textContent = 'Reel publicado';
           reelStatus.style.color = 'green';
