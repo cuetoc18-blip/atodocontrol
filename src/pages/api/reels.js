@@ -48,8 +48,8 @@ export async function POST({ request }) {
       const body = await request.json();
 
       if (body.action === 'get-upload-url') {
-        const raw = (body.fileName || 'file').replace(/[^a-zA-Z0-9._-]/g, '_');
-        const fileName = `${Date.now()}-${raw}`;
+        const raw = (body.fileName || 'file').replace(/[^a-zA-Z0-9._/-]/g, '_');
+        const fileName = raw.includes('/') ? raw : `${Date.now()}-${raw}`;
         const { data, error } = await supabase.storage
           .from('reels-videos')
           .createSignedUploadUrl(fileName);
@@ -59,19 +59,20 @@ export async function POST({ request }) {
         }
         return new Response(JSON.stringify({
           signedUrl: data.signedUrl,
-          path: data.path,
+          path: data.path || fileName,
           token: data.token
         }));
       }
 
-      if (body.action === 'save-reel') {
-        const { titulo, descripcion, video_path, imagen_path, hls_path } = body;
-        if (!titulo || !video_path) {
+      if (body.action === 'create' || body.action === 'save-reel') {
+        const { titulo, descripcion, hls_path, imagen_path, video_path } = body;
+        const path = hls_path || video_path;
+        if (!titulo || !path) {
           return new Response(JSON.stringify({ error: 'Faltan datos' }), { status: 400 });
         }
 
-        const video_url = `/media/reels/${video_path.split('/').pop()}`;
-        const imagen_url = imagen_path ? `/media/reels/${imagen_path.split('/').pop()}` : null;
+        const video_url = `/media/reels/${path}`;
+        const imagen_url = imagen_path ? `/media/reels/${imagen_path}` : null;
 
         const { data, error } = await supabase
           .from('reels')
@@ -79,9 +80,9 @@ export async function POST({ request }) {
             titulo,
             descripcion: descripcion || '',
             video_url,
-            video_path,
+            video_path: path,
             imagen_url,
-            hls_path: hls_path || null,
+            hls_path: path,
             publicado: true
           })
           .select()
