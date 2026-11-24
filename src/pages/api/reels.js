@@ -43,6 +43,7 @@ async function esAdmin(sesion) {
 function toMediaUrl(path) {
   if (!path) return null;
   if (path.startsWith('/media/')) return path;
+  if (/^https?:\/\//.test(path)) return path;
   return `/media/reels/${path}`;
 }
 
