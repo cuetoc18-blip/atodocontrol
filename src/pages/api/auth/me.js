@@ -1,5 +1,5 @@
 import { requireUser } from '../../../lib/session.js';
-import { anonClient } from '../../../lib/supabase.js';
+import { anonClient, supabase } from '../../../lib/supabase.js';
 
 export async function GET({ request }) {
   const s = requireUser(request);
@@ -8,6 +8,18 @@ export async function GET({ request }) {
     const sb = anonClient();
     const { data } = await sb.auth.getUser(s.access_token);
     if (!data || !data.user) return new Response(JSON.stringify({ ok: false }), { status: 401 });
+
+    const admin = supabase();
+    const { data: perfil } = await admin
+      .from('perfiles')
+      .select('rol')
+      .eq('id', data.user.id)
+      .maybeSingle();
+
+    if (!perfil || perfil.rol !== 'admin') {
+      return new Response(JSON.stringify({ ok: false, error: 'No autorizado' }), { status: 403 });
+    }
+
     return new Response(JSON.stringify({
       ok: true,
       user: { id: data.user.id, email: data.user.email }

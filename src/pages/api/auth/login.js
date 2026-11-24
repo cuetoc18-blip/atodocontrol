@@ -1,7 +1,5 @@
-import { anonClient } from '../../../lib/supabase.js';
+import { anonClient, supabase } from '../../../lib/supabase.js';
 import { sessionCookie } from '../../../lib/session.js';
-
-const ADMIN_EMAILS = (import.meta.env.ADMIN_EMAILS || '').split(',').map(e => e.trim().toLowerCase()).filter(Boolean);
 
 export async function POST({ request }) {
   try {
@@ -24,8 +22,14 @@ export async function POST({ request }) {
       }), { status: 401, headers: { 'Content-Type': 'application/json' } });
     }
 
-    const userEmail = (data.user.email || '').toLowerCase();
-    if (ADMIN_EMAILS.length === 0 || !ADMIN_EMAILS.includes(userEmail)) {
+    const admin = supabase();
+    const { data: perfil } = await admin
+      .from('perfiles')
+      .select('rol')
+      .eq('id', data.user.id)
+      .maybeSingle();
+
+    if (!perfil || perfil.rol !== 'admin') {
       return new Response(JSON.stringify({ ok: false, error: 'No tienes permiso de administrador' }), {
         status: 403,
         headers: { 'Content-Type': 'application/json' }
