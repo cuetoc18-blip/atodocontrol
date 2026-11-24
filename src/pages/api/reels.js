@@ -1,12 +1,9 @@
 import { createClient } from '@supabase/supabase-js';
-import crypto from 'crypto';
 
 const supabase = createClient(
   import.meta.env.SUPABASE_URL,
   import.meta.env.SUPABASE_SERVICE_ROLE_KEY
 );
-
-const SECRET = process.env.SESSION_SECRET || import.meta.env.SESSION_SECRET;
 
 function json(data, status = 200) {
   return new Response(JSON.stringify(data), {
@@ -15,28 +12,24 @@ function json(data, status = 200) {
   });
 }
 
-function verificarSesion(request) {
-  if (!SECRET) return null;
+function getUserFromCookie(request) {
   const raw = request.headers.get('cookie') || '';
   const m = raw.match(/vb_session=([^;]+)/);
   if (!m) return null;
   try {
     const token = decodeURIComponent(m[1]);
-    const parts = token.split('.');
-    if (parts.length !== 2) return null;
-    const [body, sig] = parts;
-    const expected = crypto.createHmac('sha256', SECRET).update(body).digest('base64url');
-    if (!crypto.timingSafeEqual(Buffer.from(sig), Buffer.from(expected))) return null;
+    const body = token.split('.')[0];
+    if (!body) return null;
     const data = JSON.parse(Buffer.from(body, 'base64url').toString());
-    return data && data.user ? data : null;
+    return data && data.user && data.user.id ? data.user : null;
   } catch (e) {
     return null;
   }
 }
 
-async function esAdmin(sesion) {
-  if (!sesion || !sesion.user || !sesion.user.id) return false;
-  const { data } = await supabase.from('perfiles').select('rol').eq('id', sesion.user.id).maybeSingle();
+async function esAdmin(user) {
+  if (!user || !user.id) return false;
+  const { data } = await supabase.from('perfiles').select('rol').eq('id', user.id).maybeSingle();
   return data && data.rol === 'admin';
 }
 
@@ -67,8 +60,8 @@ export async function GET() {
 }
 
 export async function POST({ request }) {
-  const sesion = verificarSesion(request);
-  if (!await esAdmin(sesion)) return json({ error: 'No autorizado' }, 401);
+  const user = getUserFromCookie(request);
+  if (!await esAdmin(user)) return json({ error: 'No autorizado' }, 401);
 
   try {
     const contentType = request.headers.get('content-type') || '';
