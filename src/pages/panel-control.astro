@@ -61,11 +61,11 @@ if (!tieneSesion) {
         credentials: 'include',
         body: JSON.stringify({ action: 'get-upload-url', fileName: path })
       });
-      const { signedUrl, path: savedPath } = await urlRes.json();
-      if (!urlRes.ok) throw new Error('No se pudo obtener URL');
-      const put = await fetch(signedUrl, { method: 'PUT', body: blob });
+      const urlData = await urlRes.json().catch(() => ({}));
+      if (!urlRes.ok) throw new Error(urlData.error || 'No se pudo obtener URL');
+      const put = await fetch(urlData.signedUrl, { method: 'PUT', body: blob });
       if (!put.ok) throw new Error('Error subiendo ' + path);
-      return savedPath || path;
+      return urlData.path || path;
     }
 
     if (reelForm) {
@@ -128,7 +128,8 @@ if (!tieneSesion) {
             })
           });
 
-          if (!saveRes.ok) throw new Error('Error al guardar el reel');
+          const saveData = await saveRes.json().catch(() => ({}));
+          if (!saveRes.ok) throw new Error(saveData.error || 'Error al guardar el reel');
 
           reelStatus.textContent = 'Reel publicado';
           reelStatus.style.color = 'green';
