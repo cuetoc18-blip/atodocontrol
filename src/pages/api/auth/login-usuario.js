@@ -7,8 +7,17 @@ const supabase = createClient(
 );
 const SECRET = process.env.SESSION_SECRET || 'cambia-esto';
 
-function hash(password) {
+function hashViejo(password) {
   return crypto.createHash('sha256').update(password + SECRET).digest('hex');
+}
+
+function hashPbkdf2(password) {
+  return crypto.pbkdf2Sync(password, SECRET, 100000, 32, 'sha256').toString('hex');
+}
+
+function claveValida(password, guardado) {
+  if (!guardado) return false;
+  return guardado === hashPbkdf2(password) || guardado === hashViejo(password);
 }
 
 function firmar(payload) {
@@ -25,7 +34,7 @@ export async function POST({ request }) {
     const { data, error } = await supabase.from('perfiles').select('id, nombre, genero, password_hash').eq('email', email).maybeSingle();
     if (error || !data) return new Response(JSON.stringify({ error: 'Correo o clave incorrectos' }), { status: 401 });
 
-    if (data.password_hash !== hash(password)) {
+    if (!claveValida(password, data.password_hash)) {
       return new Response(JSON.stringify({ error: 'Correo o clave incorrectos' }), { status: 401 });
     }
 

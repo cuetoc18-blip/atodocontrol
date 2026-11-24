@@ -1,11 +1,19 @@
-import { anonClient, supabase } from '../../../lib/supabase.js';
+import { supabase } from '../../../lib/supabase.js';
 import { sessionCookie } from '../../../lib/session.js';
+import crypto from 'crypto';
+
+const SECRET = process.env.SESSION_SECRET || import.meta.env.SESSION_SECRET;
+if (!SECRET || SECRET.length < 32) throw new Error('SESSION_SECRET es obligatorio (mínimo 32 caracteres)');
+
+function hashPassword(password) {
+  return crypto.pbkdf2Sync(password, SECRET, 100000, 32, 'sha256').toString('hex');
+}
 
 export async function POST({ request }) {
   try {
     let body = {};
     try { body = await request.json(); } catch (e) {}
-    const email = String(body.email || '').trim();
+    const email = String(body.email || '').trim().toLowerCase();
     const password = String(body.password || '');
     if (!email || !password) {
       return new Response(JSON.stringify({ ok: false, error: 'Completa correo y contraseña' }), {
@@ -13,23 +21,30 @@ export async function POST({ request }) {
         headers: { 'Content-Type': 'application/json' }
       });
     }
-    const sb = anonClient();
-    const { data, error } = await sb.auth.signInWithPassword({ email, password });
-    if (error || !data.session) {
-      return new Response(JSON.stringify({
-        ok: false,
-        error: (error && error.message) || 'Credenciales inválidas'
-      }), { status: 401, headers: { 'Content-Type': 'application/json' } });
-    }
 
     const admin = supabase();
-    const { data: perfil } = await admin
+    const { data: perfil, error } = await admin
       .from('perfiles')
-      .select('rol')
-      .eq('id', data.user.id)
+      .select('id, email, password_hash, rol')
+      .eq('email', email)
       .maybeSingle();
 
-    if (!perfil || perfil.rol !== 'admin') {
+    if (error || !perfil || !perfil.password_hash) {
+      return new Response(JSON.stringify({ ok: false, error: 'Credenciales inválidas' }), {
+        status: 401,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
+
+    const hash = hashPassword(password);
+    if (hash !== perfil.password_hash) {
+      return new Response(JSON.stringify({ ok: false, error: 'Credenciales inválidas' }), {
+        status: 401,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
+
+    if (perfil.rol !== 'admin') {
       return new Response(JSON.stringify({ ok: false, error: 'No tienes permiso de administrador' }), {
         status: 403,
         headers: { 'Content-Type': 'application/json' }
@@ -37,9 +52,7 @@ export async function POST({ request }) {
     }
 
     const payload = {
-      access_token: data.session.access_token,
-      refresh_token: data.session.refresh_token,
-      user: { id: data.user.id, email: data.user.email }
+      user: { id: perfil.id, email: perfil.email }
     };
     return new Response(JSON.stringify({ ok: true, user: payload.user }), {
       status: 200,

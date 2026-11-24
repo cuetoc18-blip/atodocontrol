@@ -1,8 +1,12 @@
-import { createClient } from '@supabase/supabase-js';
+import { supabase } from '../../../lib/supabase.js';
 import crypto from 'crypto';
 
-const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
-const SECRET = process.env.SESSION_SECRET || 'cambia-esto';
+const SECRET = process.env.SESSION_SECRET || import.meta.env.SESSION_SECRET;
+if (!SECRET || SECRET.length < 32) throw new Error('SESSION_SECRET es obligatorio (mínimo 32 caracteres)');
+
+function hashPassword(password) {
+  return crypto.pbkdf2Sync(password, SECRET, 100000, 32, 'sha256').toString('hex');
+}
 
 function firmar(payload) {
   const body = Buffer.from(JSON.stringify(payload)).toString('base64url');
@@ -16,21 +20,27 @@ export async function POST({ request }) {
     return new Response(JSON.stringify({ error: 'Faltan datos' }), { status: 400 });
   }
 
-  const { data: authData, error: authError } = await supabase.auth.signUp({ email, password });
-  if (authError) return new Response(JSON.stringify({ error: authError.message }), { status: 400 });
+  const admin = supabase();
+  const { data: existente } = await admin.from('perfiles').select('id').eq('email', email.toLowerCase()).maybeSingle();
+  if (existente) {
+    return new Response(JSON.stringify({ error: 'El correo ya está registrado' }), { status: 400 });
+  }
 
-  const { error: perfilError } = await supabase.from('perfiles').insert({
-    id: authData.user.id,
-    email,
+  const id = crypto.randomUUID();
+  const { error } = await admin.from('perfiles').insert({
+    id,
+    email: email.toLowerCase(),
     nombre,
     genero: genero || 'm',
-    avatar_url: avatar_url || null
+    avatar_url: avatar_url || null,
+    rol: 'usuario',
+    password_hash: hashPassword(password)
   });
-  if (perfilError) return new Response(JSON.stringify({ error: perfilError.message }), { status: 500 });
+  if (error) return new Response(JSON.stringify({ error: error.message }), { status: 500 });
 
   const token = firmar({
-    uid: authData.user.id,
-    email,
+    uid: id,
+    email: email.toLowerCase(),
     nombre,
     genero: genero || 'm',
     exp: Date.now() + 1000 * 60 * 60 * 24 * 7

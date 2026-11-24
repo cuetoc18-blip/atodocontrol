@@ -1,19 +1,17 @@
 import { requireUser } from '../../../lib/session.js';
-import { anonClient, supabase } from '../../../lib/supabase.js';
+import { supabase } from '../../../lib/supabase.js';
 
 export async function GET({ request }) {
   const s = requireUser(request);
-  if (!s) return new Response(JSON.stringify({ ok: false }), { status: 401 });
+  if (!s || !s.user || !s.user.id) {
+    return new Response(JSON.stringify({ ok: false }), { status: 401 });
+  }
   try {
-    const sb = anonClient();
-    const { data } = await sb.auth.getUser(s.access_token);
-    if (!data || !data.user) return new Response(JSON.stringify({ ok: false }), { status: 401 });
-
     const admin = supabase();
     const { data: perfil } = await admin
       .from('perfiles')
-      .select('rol')
-      .eq('id', data.user.id)
+      .select('id, email, rol')
+      .eq('id', s.user.id)
       .maybeSingle();
 
     if (!perfil || perfil.rol !== 'admin') {
@@ -22,7 +20,7 @@ export async function GET({ request }) {
 
     return new Response(JSON.stringify({
       ok: true,
-      user: { id: data.user.id, email: data.user.email }
+      user: { id: perfil.id, email: perfil.email }
     }), { headers: { 'Content-Type': 'application/json' } });
   } catch (e) {
     return new Response(JSON.stringify({ ok: false }), { status: 401 });
