@@ -19,6 +19,45 @@
     }
   });
 
+  function esHls(url) {
+    return !!url && url.includes('.m3u8');
+  }
+
+  function cargarHlsJs() {
+    if (window.Hls) return Promise.resolve();
+    if (!window.__hlsJsPromise) {
+      window.__hlsJsPromise = new Promise((resolve, reject) => {
+        const s = document.createElement('script');
+        s.src = 'https://cdn.jsdelivr.net/npm/hls.js@1.5.15/dist/hls.min.js';
+        s.onload = resolve;
+        s.onerror = reject;
+        document.head.appendChild(s);
+      });
+    }
+    return window.__hlsJsPromise;
+  }
+
+  // Solo actúa con videos .m3u8; los MP4 usan src normal
+  function fuenteHls(video, url) {
+    let hls = null;
+    if (esHls(url)) {
+      if (video.canPlayType('application/vnd.apple.mpegurl')) {
+        video.src = url;
+      } else {
+        cargarHlsJs().then(() => {
+          if (window.Hls && window.Hls.isSupported()) {
+            hls = new window.Hls({ maxBufferLength: 10, maxMaxBufferLength: 20 });
+            hls.loadSource(url);
+            hls.attachMedia(video);
+          }
+        }).catch(() => {});
+      }
+    }
+    return {
+      destroy() { if (hls) { hls.destroy(); hls = null; } }
+    };
+  }
+
   function goTo(id) {
     if (id) window.location.href = '/reel/' + id;
   }
@@ -61,7 +100,7 @@
           {#if reel.imagen_url}
             <img src={reel.imagen_url} alt="" class="reel-poster" />
           {/if}
-          <video src={reel.video_url} muted playsinline loop preload="metadata" poster={reel.imagen_url || ''} on:playing={(e) => e.currentTarget.classList.add('listo')}></video>
+          <video src={esHls(reel.video_url) ? null : reel.video_url} use:fuenteHls={reel.video_url} muted playsinline loop preload="metadata" poster={reel.imagen_url || ''} on:playing={(e) => e.currentTarget.classList.add('listo')}></video>
           <div class="reel-play">▶</div>
         </div>
         <p class="reel-title">{reel.titulo || ''}</p>
