@@ -1,5 +1,5 @@
 import { requireUser } from '../../lib/session.js';
-import { anonClient, userClient } from '../../lib/supabase.js';
+import { anonClient, supabase } from '../../lib/supabase.js';
 
 function json(data, status = 200) {
   return new Response(JSON.stringify(data), {
@@ -8,13 +8,19 @@ function json(data, status = 200) {
   });
 }
 
+async function esAdmin(s) {
+  if (!s || !s.user || !s.user.id) return false;
+  const { data } = await supabase().from('perfiles').select('rol').eq('id', s.user.id).maybeSingle();
+  return data && data.rol === 'admin';
+}
+
 export async function GET({ request }) {
   const url = new URL(request.url);
   const admin = url.searchParams.get('admin') === '1';
   if (admin) {
     const s = requireUser(request);
-    if (!s) return json({ ok: false, error: 'No autorizado' }, 401);
-    const { data, error } = await userClient(s.access_token).from('noticias').select('*').order('created_at', { ascending: false });
+    if (!await esAdmin(s)) return json({ ok: false, error: 'No autorizado' }, 401);
+    const { data, error } = await supabase().from('noticias').select('*').order('created_at', { ascending: false });
     if (error) return json({ error: error.message }, 500);
     return json(data || []);
   }
@@ -28,9 +34,9 @@ export async function GET({ request }) {
 
 export async function POST({ request }) {
   const s = requireUser(request);
-  if (!s) return json({ error: 'No autorizado' }, 401);
+  if (!await esAdmin(s)) return json({ error: 'No autorizado' }, 401);
   const body = await request.json();
-  const { data, error } = await userClient(s.access_token).from('noticias').insert([body]).select().single();
+  const { data, error } = await supabase().from('noticias').insert([body]).select().single();
   if (error) return json({ error: error.message }, 500);
   return json(data);
 }
