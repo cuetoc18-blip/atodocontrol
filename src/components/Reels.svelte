@@ -78,52 +78,68 @@
   }
   .reels-container {
     display: flex;
-    gap: 12px;
+    gap: 10px;
     overflow-x: auto;
-    scroll-snap-type: x mandatory;
     padding: 8px 0 16px;
-    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+    scroll-snap-type: x mandatory;
   }
-  .reels-container::-webkit-scrollbar { display: none; }
   .reel-item {
-    flex: 0 0 160px;
+    flex: 0 0 140px;
+    width: 140px;
+    min-width: 140px;
+    max-width: 140px;
     scroll-snap-align: start;
     cursor: pointer;
   }
   .reel-thumb {
-    position: relative;
-    width: 160px;
-    height: 280px;
-    border-radius: 12px;
-    overflow: hidden;
+    width: 140px;
+    height: 249px;
     background: #111;
+    border-radius: 12px;
+    position: relative;
+    overflow: hidden;
   }
-  .reel-thumb video,
-  .reel-thumb img {
+  .reel-thumb .reel-poster {
     width: 100%;
     height: 100%;
     object-fit: cover;
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 1;
+  }
+  .reel-thumb video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 2;
   }
   .reel-play {
     position: absolute;
-    inset: 0;
+    width: 40px;
+    height: 40px;
+    background: rgba(0,0,0,.6);
+    border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
     color: #fff;
-    font-size: 32px;
-    text-shadow: 0 2px 8px rgba(0,0,0,.5);
+    font-size: 16px;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 3;
     pointer-events: none;
   }
   .reel-title {
-    margin: 6px 0 0;
-    font-size: 13px;
-    font-weight: 600;
-    color: #1e293b;
-    line-height: 1.3;
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
+    margin: 10px 0 0;
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: #111;
+    line-height: 1.35;
   }
 </style>
