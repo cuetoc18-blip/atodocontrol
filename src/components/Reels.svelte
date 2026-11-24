@@ -61,7 +61,7 @@
           {#if reel.imagen_url}
             <img src={reel.imagen_url} alt="" class="reel-poster" />
           {/if}
-          <video src={reel.video_url} muted playsinline loop preload="metadata" poster={reel.imagen_url || ''}></video>
+          <video src={reel.video_url} muted playsinline loop preload="metadata" poster={reel.imagen_url || ''} on:playing={(e) => e.currentTarget.classList.add('listo')}></video>
           <div class="reel-play">▶</div>
         </div>
         <p class="reel-title">{reel.titulo || ''}</p>
@@ -117,6 +117,11 @@
     top: 0;
     left: 0;
     z-index: 2;
+    opacity: 0;
+    transition: opacity .3s;
+  }
+  .reel-thumb :global(video.listo) {
+    opacity: 1;
   }
   .reel-play {
     position: absolute;
