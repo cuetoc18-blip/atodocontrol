@@ -1,10 +1,12 @@
 import { createClient } from '@supabase/supabase-js';
-import { requireUser } from '../../lib/session.js';
+import crypto from 'crypto';
 
 const supabase = createClient(
   import.meta.env.SUPABASE_URL,
   import.meta.env.SUPABASE_SERVICE_ROLE_KEY
 );
+
+const SECRET = process.env.SESSION_SECRET || import.meta.env.SESSION_SECRET;
 
 function json(data, status = 200) {
   return new Response(JSON.stringify(data), {
@@ -13,9 +15,28 @@ function json(data, status = 200) {
   });
 }
 
-async function esAdmin(s) {
-  if (!s || !s.user || !s.user.id) return false;
-  const { data } = await supabase.from('perfiles').select('rol').eq('id', s.user.id).maybeSingle();
+function verificarSesion(request) {
+  if (!SECRET) return null;
+  const raw = request.headers.get('cookie') || '';
+  const m = raw.match(/vb_session=([^;]+)/);
+  if (!m) return null;
+  try {
+    const token = decodeURIComponent(m[1]);
+    const parts = token.split('.');
+    if (parts.length !== 2) return null;
+    const [body, sig] = parts;
+    const expected = crypto.createHmac('sha256', SECRET).update(body).digest('base64url');
+    if (!crypto.timingSafeEqual(Buffer.from(sig), Buffer.from(expected))) return null;
+    const data = JSON.parse(Buffer.from(body, 'base64url').toString());
+    return data && data.user ? data : null;
+  } catch (e) {
+    return null;
+  }
+}
+
+async function esAdmin(sesion) {
+  if (!sesion || !sesion.user || !sesion.user.id) return false;
+  const { data } = await supabase.from('perfiles').select('rol').eq('id', sesion.user.id).maybeSingle();
   return data && data.rol === 'admin';
 }
 
@@ -46,8 +67,8 @@ export async function GET() {
 }
 
 export async function POST({ request }) {
-  const s = requireUser(request);
-  if (!await esAdmin(s)) return json({ error: 'No autorizado' }, 401);
+  const sesion = verificarSesion(request);
+  if (!await esAdmin(sesion)) return json({ error: 'No autorizado' }, 401);
 
   try {
     const contentType = request.headers.get('content-type') || '';
