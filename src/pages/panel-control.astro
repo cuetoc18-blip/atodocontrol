@@ -62,9 +62,18 @@ if (!tieneSesion) {
         body: JSON.stringify({ action: 'get-upload-url', fileName: path })
       });
       const urlData = await urlRes.json().catch(() => ({}));
-      if (!urlRes.ok) throw new Error(urlData.error || 'No se pudo obtener URL');
-      const put = await fetch(urlData.signedUrl, { method: 'PUT', body: blob });
-      if (!put.ok) throw new Error('Error subiendo ' + path);
+      if (!urlRes.ok) throw new Error(urlData.error || 'No se pudo obtener URL (status ' + urlRes.status + ')');
+      if (!urlData.signedUrl) throw new Error('No llegó signedUrl: ' + JSON.stringify(urlData));
+
+      const put = await fetch(urlData.signedUrl, {
+        method: 'PUT',
+        body: blob,
+        headers: { 'Content-Type': blob.type || 'application/octet-stream' }
+      });
+      if (!put.ok) {
+        const putText = await put.text().catch(() => '');
+        throw new Error('Error subiendo ' + path + ' (status ' + put.status + '): ' + putText.slice(0, 200));
+      }
       return urlData.path || path;
     }
 
